@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 // GokiCare – 子ども向け（だけど大人にも効く）ごほうび付き強化版
 // 単一ファイルReact。Tailwind前提。localStorageで進捗＆報酬を保存。
@@ -79,7 +79,10 @@ function BreathingGuide({ running }) {
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="w-40 h-40 rounded-full border-2 border-neutral-300 grid place-items-center">
-        <div className="transition-all duration-300 ease-linear" style={{ width: `${60 + 60*ratio}%`, height: `${60 + 60*ratio}%`}}>
+        <div
+          className="transition-all duration-300 ease-linear"
+          style={{ width: `${60 + 60*ratio}%`, height: `${60 + 60*ratio}%` }}
+        >
           <div className="w-full h-full rounded-full bg-neutral-300/60" />
         </div>
       </div>
@@ -127,7 +130,6 @@ export default function GokiCare() {
   const [blur, setBlur] = useState(saved.blur ?? 12);
   const [dim, setDim] = useState(saved.dim ?? 0.2);
   const [panic, setPanic] = useState(false);
-  const [breath, setBreath] = useState(true);
 
   // ゲーム化要素
   const [coins, setCoins] = useState(saved.coins || 0);
