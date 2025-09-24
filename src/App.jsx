@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 const STAGES = [
   {
@@ -443,7 +443,47 @@ const StageTimeline = ({ currentIndex, phase }) => (
   </div>
 );
 
-const StageVisual = ({ stage, interactive = false, onActivate, isTarget = false, instruction }) => {
+const createRoachMotion = (stage) => {
+  const direction = Math.random() > 0.5 ? "ltr" : "rtl";
+  const startX = direction === "ltr" ? "-240px" : "260px";
+  const endX = direction === "ltr" ? "260px" : "-240px";
+  const midX = `${(Math.random() - 0.5) * 60}px`;
+  const verticalStart = (Math.random() - 0.5) * 26;
+  const verticalEnd = verticalStart + (Math.random() - 0.5) * 24;
+  const verticalMid = (verticalStart + verticalEnd) / 2 + (Math.random() - 0.5) * 16;
+  const levelFactor = Math.min(stage?.level ?? 1, 5);
+  const baseDuration = 3.6 - levelFactor * 0.28;
+  const duration = Math.max(2.4, baseDuration + (Math.random() - 0.5) * 1.2);
+  const delay = Math.random() * 0.6;
+  const startTiltMagnitude = 8 + Math.random() * 6;
+  const endTiltMagnitude = 6 + Math.random() * 6;
+  const tiltStart = direction === "ltr" ? -startTiltMagnitude : startTiltMagnitude;
+  const tiltEnd = direction === "ltr" ? endTiltMagnitude : -endTiltMagnitude;
+  const tiltMid = (Math.random() - 0.5) * 12;
+
+  return {
+    startX,
+    midX,
+    endX,
+    verticalStart,
+    verticalMid,
+    verticalEnd,
+    tiltStart,
+    tiltMid,
+    tiltEnd,
+    duration,
+    delay,
+  };
+};
+
+const StageVisual = ({
+  stage,
+  interactive = false,
+  onActivate,
+  isTarget = false,
+  instruction,
+  motionSeed = 0,
+}) => {
   const baseClass =
     "relative aspect-[4/3] w-full overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-inner";
 
@@ -470,6 +510,36 @@ const StageVisual = ({ stage, interactive = false, onActivate, isTarget = false,
     { bg: "#E2E8F0", body: "#475569", accent: "#CBD5F5", stroke: "#1F2937" },
     { bg: "#111827", body: "#F97316", accent: "#FACC15", stroke: "#FB923C" },
   ][Math.min(stage.level - 1, 4)];
+
+  const motion = useMemo(() => {
+    if (!interactive) return null;
+    return createRoachMotion(stage);
+  }, [interactive, stage?.id, motionSeed]);
+
+  const motionStyle =
+    interactive && motion
+      ? {
+          "--roach-start-x": motion.startX,
+          "--roach-mid-x": motion.midX,
+          "--roach-end-x": motion.endX,
+          "--roach-y-start": `${motion.verticalStart}px`,
+          "--roach-y-mid": `${motion.verticalMid}px`,
+          "--roach-y-end": `${motion.verticalEnd}px`,
+          "--roach-tilt-start": `${motion.tiltStart}deg`,
+          "--roach-tilt-mid": `${motion.tiltMid}deg`,
+          "--roach-tilt-end": `${motion.tiltEnd}deg`,
+          animationDuration: `${motion.duration}s`,
+          animationDelay: `${motion.delay}s`,
+        }
+      : undefined;
+
+  const roachGroupProps = interactive
+    ? {
+        className: "roach-sweep",
+        style: motionStyle,
+        key: `${stage.id}-${motionSeed}`,
+      }
+    : { key: `${stage.id}-static` };
 
   const gradientId = `goki-body-${stage.id}`;
   const highlightId = `goki-highlight-${stage.id}`;
@@ -593,42 +663,56 @@ const StageVisual = ({ stage, interactive = false, onActivate, isTarget = false,
           <circle cx="214" cy="146" r="22" />
           <circle cx="210" cy="32" r="14" />
         </g>
-        {segmentElements}
-        <ellipse
-          cx={centerX}
-          cy={centerY - bodyWidth * 0.58}
-          rx={bodyWidth * 0.45}
-          ry={bodyWidth * 0.35}
-          fill={palette.stroke}
-          opacity={0.85}
-        />
-        <ellipse
-          cx={centerX}
-          cy={centerY - bodyWidth * 0.32}
-          rx={bodyWidth * 0.6}
-          ry={bodyWidth * 0.48}
-          fill={`url(#${gradientId})`}
-        />
-        <ellipse
-          cx={centerX}
-          cy={centerY + bodyWidth * 0.08}
-          rx={bodyWidth * 0.85}
-          ry={bodyWidth * 0.62}
-          fill={`url(#${gradientId})`}
-          opacity={0.92}
-        />
-        <ellipse
-          cx={centerX}
-          cy={centerY}
-          rx={bodyWidth * 0.7}
-          ry={bodyWidth * 0.45}
-          fill={`url(#${highlightId})`}
-          opacity={0.5}
-        />
-        {legs}
-        {antennae}
-        <circle cx={centerX - bodyWidth * 0.25} cy={centerY - bodyWidth * 0.72} r={4 + stage.level} fill="#111827" opacity={0.65} />
-        <circle cx={centerX + bodyWidth * 0.25} cy={centerY - bodyWidth * 0.72} r={4 + stage.level} fill="#111827" opacity={0.65} />
+        <g {...roachGroupProps}>
+          {segmentElements}
+          <ellipse
+            cx={centerX}
+            cy={centerY - bodyWidth * 0.58}
+            rx={bodyWidth * 0.45}
+            ry={bodyWidth * 0.35}
+            fill={palette.stroke}
+            opacity={0.85}
+          />
+          <ellipse
+            cx={centerX}
+            cy={centerY - bodyWidth * 0.32}
+            rx={bodyWidth * 0.6}
+            ry={bodyWidth * 0.48}
+            fill={`url(#${gradientId})`}
+          />
+          <ellipse
+            cx={centerX}
+            cy={centerY + bodyWidth * 0.08}
+            rx={bodyWidth * 0.85}
+            ry={bodyWidth * 0.62}
+            fill={`url(#${gradientId})`}
+            opacity={0.92}
+          />
+          <ellipse
+            cx={centerX}
+            cy={centerY}
+            rx={bodyWidth * 0.7}
+            ry={bodyWidth * 0.45}
+            fill={`url(#${highlightId})`}
+            opacity={0.5}
+          />
+          {legs}
+          {antennae}
+          <circle
+            cx={centerX - bodyWidth * 0.25}
+            cy={centerY - bodyWidth * 0.72}
+            r={4 + stage.level}
+            fill="#111827"
+            opacity={0.65}
+          />
+          <circle
+            cx={centerX + bodyWidth * 0.25}
+            cy={centerY - bodyWidth * 0.72}
+            r={4 + stage.level}
+            fill="#111827"
+            opacity={0.65}
+          />
+        </g>
       </svg>
       <div className="absolute left-3 top-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
         レベル{stage.level}-{stage.subStage}
@@ -741,6 +825,7 @@ const HuntCard = ({ stage, currentRoach, onRoachTap, onSkip, message, encounterC
         interactive
         onActivate={onRoachTap}
         instruction="ターゲットなら即タップ！"
+        motionSeed={encounterCount}
       />
       <div className="space-y-4">
         <div className="space-y-2">

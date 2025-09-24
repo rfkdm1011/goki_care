@@ -15,3 +15,44 @@ body {
 * {
   box-sizing: border-box;
 }
+
+.roach-sweep {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: roach-scamper;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+
+@keyframes roach-scamper {
+  0% {
+    transform: translate3d(var(--roach-start-x, -240px), var(--roach-y-start, 0px), 0)
+      rotate(var(--roach-tilt-start, -8deg));
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate3d(var(--roach-mid-x, 0px), var(--roach-y-mid, 0px), 0)
+      rotate(var(--roach-tilt-mid, 0deg));
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--roach-end-x, 260px), var(--roach-y-end, 0px), 0)
+      rotate(var(--roach-tilt-end, 8deg));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roach-sweep {
+    animation: none !important;
+    transform: translate3d(0, 0, 0) !important;
+    opacity: 1 !important;
+  }
+}
