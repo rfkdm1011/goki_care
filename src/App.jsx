@@ -1,417 +1,828 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
-// GokiCare – 子ども向け（だけど大人にも効く）ごほうび付き強化版
-// 単一ファイルReact。Tailwind前提。localStorageで進捗＆報酬を保存。
-// 露骨な実物描写は使わず、抽象SVGのみ。段階クリアでコイン＆ごほうび解放。
-
-// --- 永続化ユーティリティ ---
-const LS_KEY = "gokicare.v2";
-const save = (data) => localStorage.setItem(LS_KEY, JSON.stringify(data));
-const load = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } };
-const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-
-// --- ごほうび定義（子ども向けに見えるが甘すぎないトーン） ---
-// type: theme=配色, sticker=画面に貼れるシール, sfx=ご褒美ジングル（将来拡張）
-const REWARDS = [
-  { id: "th_sakura", type: "theme", name: "さくら配色", rarity: "common" },
-  { id: "th_mint", type: "theme", name: "ミント配色", rarity: "common" },
-  { id: "th_midnight", type: "theme", name: "ミッドナイト配色", rarity: "rare" },
-  { id: "st_star", type: "sticker", name: "きらきらスター", rarity: "common" },
-  { id: "st_ribbon", type: "sticker", name: "リボンバッジ", rarity: "common" },
-  { id: "st_crystal", type: "sticker", name: "クリスタル", rarity: "rare" },
-  { id: "st_wing", type: "sticker", name: "羽", rarity: "epic" },
+const STAGES = [
+  {
+    id: "1-1",
+    level: 1,
+    subStage: 1,
+    title: "チャバネゴキブリを見分けよう",
+    detailLevel: 1,
+    learning: {
+      topic: "チャバネゴキブリの特徴",
+      summary: "キッチンや飲食店で最もよく見かける小型のゴキブリ。",
+      points: [
+        "体長は約13〜16mmとコンパクト。",
+        "前胸背板に2本のくっきりした黒い筋が走る。",
+        "温かい場所や家電の裏側に集まりやすい。",
+      ],
+      funFact: "卵鞘を持ち歩き、ふ化直前に置いていく習性があるよ。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["チャバネゴキブリ", "クロゴキブリ", "ヤマトゴキブリ", "トビイロゴキブリ"],
+      answer: 0,
+      hint: "胸の2本線に注目しよう。",
+    },
+    victory: {
+      shout: "チャバネゴキブリを撃退！",
+      message: "こまめに水気を拭き取ると住みにくくできるよ。",
+    },
+  },
+  {
+    id: "1-2",
+    level: 1,
+    subStage: 2,
+    title: "クロゴキブリのポイント",
+    detailLevel: 1,
+    learning: {
+      topic: "クロゴキブリは光沢のある黒色",
+      summary: "日本の都市部で多い大型種。夜行性で湿った場所を好む。",
+      points: [
+        "体長は3cm前後で艶のある黒褐色。",
+        "翅が長く、驚くと滑空することがある。",
+        "下水道やマンホールの周辺から侵入しやすい。",
+      ],
+      funFact: "幼虫期は褐色だが、成虫になると黒っぽく艶が出る。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["クロゴキブリ", "ワモンゴキブリ", "オオゴキブリ", "チャバネゴキブリ"],
+      answer: 0,
+      hint: "真っ黒で大きい体がヒント。",
+    },
+    victory: {
+      shout: "クロゴキブリを撃退！",
+      message: "排水口の清掃と隙間の封鎖で侵入を防ごう。",
+    },
+  },
+  {
+    id: "1-3",
+    level: 1,
+    subStage: 3,
+    title: "ワモンゴキブリの模様",
+    detailLevel: 1,
+    learning: {
+      topic: "ワモンゴキブリは胸の輪模様が目印",
+      summary: "大型で暖かい地域に多い種類。室内に侵入すると大暴れ。",
+      points: [
+        "前胸背板の中央に輪（リング）模様。",
+        "赤みのある茶色で体長は3〜4cmとビッグサイズ。",
+        "湿った場所と温かい環境を好む。",
+      ],
+      funFact: "飛ぶ力が強く、壁をよじ登るのも得意。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["ワモンゴキブリ", "クロゴキブリ", "ヤマトゴキブリ", "サツマゴキブリ"],
+      answer: 0,
+      hint: "胸のリング模様を見つけてね。",
+    },
+    victory: {
+      shout: "ワモンゴキブリを撃退！",
+      message: "水回りの湿気対策で居心地をなくそう。",
+    },
+  },
+  {
+    id: "2-1",
+    level: 2,
+    subStage: 1,
+    title: "ヤマトゴキブリの暮らし",
+    detailLevel: 2,
+    learning: {
+      topic: "ヤマトゴキブリは日本原産",
+      summary: "屋外でも見かける日本原産のゴキブリ。寒さにも比較的強い。",
+      points: [
+        "体長は25〜35mmで黒褐色。",
+        "オスは翅が長く、メスは短め。",
+        "湿った落ち葉や下水道の周辺で生活する。",
+      ],
+      funFact: "冬でも見られる数少ない種類。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["ヤマトゴキブリ", "クロゴキブリ", "モリチャバネゴキブリ", "イエゴキブリ"],
+      answer: 0,
+      hint: "寒さに強い在来種だよ。",
+    },
+    victory: {
+      shout: "ヤマトゴキブリを撃退！",
+      message: "玄関まわりの落ち葉を片付けて侵入を防ごう。",
+    },
+  },
+  {
+    id: "2-2",
+    level: 2,
+    subStage: 2,
+    title: "トビイロゴキブリの色",
+    detailLevel: 2,
+    learning: {
+      topic: "トビイロゴキブリは栗色のボディ",
+      summary: "南の地域でよく見られる中型種。全身が均一な茶色で落ち着いた色合い。",
+      points: [
+        "体長は約28mm、濃い栗色。",
+        "翅に模様がなくマットな質感。",
+        "夜間に活発で、光を嫌って素早く逃げる。",
+      ],
+      funFact: "英語名は\"Smokybrown\"。燻したような色が語源。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["トビイロゴキブリ", "ヤマトゴキブリ", "クロゴキブリ", "ワモンゴキブリ"],
+      answer: 0,
+      hint: "羽に模様がない栗色ボディ。",
+    },
+    victory: {
+      shout: "トビイロゴキブリを撃退！",
+      message: "屋外の植木鉢まわりを乾燥させると近寄りにくい。",
+    },
+  },
+  {
+    id: "2-3",
+    level: 2,
+    subStage: 3,
+    title: "イエゴキブリの模様",
+    detailLevel: 2,
+    learning: {
+      topic: "イエゴキブリは黄色い帯が特徴",
+      summary: "乾燥した場所にも強く、家具の高い位置に潜むこともある小型種。",
+      points: [
+        "体長は10〜14mmで淡い茶色。",
+        "胸部と腹部に薄黄色の帯模様。",
+        "乾燥に強く、天井付近にも潜む。",
+      ],
+      funFact: "英語名は\"Brown-banded cockroach\"。帯模様がそのまま名前に。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["イエゴキブリ", "チャバネゴキブリ", "クロゴキブリ", "ワモンゴキブリ"],
+      answer: 0,
+      hint: "淡い黄色の帯に注目。",
+    },
+    victory: {
+      shout: "イエゴキブリを撃退！",
+      message: "家具の上も含めて掃除機をかけて隠れ家を減らそう。",
+    },
+  },
+  {
+    id: "3-1",
+    level: 3,
+    subStage: 1,
+    title: "モリチャバネゴキブリの生活",
+    detailLevel: 3,
+    learning: {
+      topic: "モリチャバネゴキブリはメスだけで増える",
+      summary: "熱帯原産で観葉植物や温室から広がった種類。メスだけでも殖える不思議なゴキブリ。",
+      points: [
+        "体長は20〜25mm、こげ茶色。",
+        "翅が短く、土にもぐるのが得意。",
+        "単為生殖でメスだけでも繁殖する。",
+      ],
+      funFact: "同じ仲間が植木鉢の土から出てくることがあるよ。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["モリチャバネゴキブリ", "ヤマトゴキブリ", "トビイロゴキブリ", "ヒメマルゴキブリ"],
+      answer: 0,
+      hint: "翅が短く丸みがある姿。",
+    },
+    victory: {
+      shout: "モリチャバネゴキブリを撃退！",
+      message: "鉢植えの土を乾かしぎみにすると住みにくい。",
+    },
+  },
+  {
+    id: "3-2",
+    level: 3,
+    subStage: 2,
+    title: "ヒメマルゴキブリの丸い体",
+    detailLevel: 3,
+    learning: {
+      topic: "ヒメマルゴキブリはつややかな丸ボディ",
+      summary: "落ち葉の下などにいる小型の森のゴキブリ。丸い体つきがチャームポイント。",
+      points: [
+        "体長は15mm前後で丸みが強い。",
+        "胸部に薄い模様が入り、光沢がある。",
+        "動きは比較的おだやか。",
+      ],
+      funFact: "ペットとして飼育されることもある。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["ヒメマルゴキブリ", "モリチャバネゴキブリ", "イエゴキブリ", "サツマゴキブリ"],
+      answer: 0,
+      hint: "ころんとした丸い体つき。",
+    },
+    victory: {
+      shout: "ヒメマルゴキブリを撃退！",
+      message: "落ち葉の下はこまめに掃いていこう。",
+    },
+  },
+  {
+    id: "3-3",
+    level: 3,
+    subStage: 3,
+    title: "オオゴキブリの迫力",
+    detailLevel: 3,
+    learning: {
+      topic: "オオゴキブリは日本最大級",
+      summary: "森林に住む巨大なゴキブリ。艶消しの黒色で厚みがある。",
+      points: [
+        "体長は45〜60mmとビッグサイズ。",
+        "翅は退化していて飛べない。",
+        "朽ち木の中で暮らし、家の中にはほとんど出ない。",
+      ],
+      funFact: "木をかじってトンネルを作る力持ち。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["オオゴキブリ", "クロゴキブリ", "ワモンゴキブリ", "チャバネゴキブリ"],
+      answer: 0,
+      hint: "艶消しブラックの超大型。",
+    },
+    victory: {
+      shout: "オオゴキブリを撃退！",
+      message: "倒木を片付けて生息場所を整理しよう。",
+    },
+  },
+  {
+    id: "4-1",
+    level: 4,
+    subStage: 1,
+    title: "サツマゴキブリの模様",
+    detailLevel: 4,
+    learning: {
+      topic: "サツマゴキブリは縁どりが黄色",
+      summary: "九州以南で見られる比較的大型の種類。翅の縁が明るく彩られる。",
+      points: [
+        "体長は30mmほどで赤褐色。",
+        "前胸背板や腹部の縁が黄色くふちどられる。",
+        "湿った落ち葉や石の下を好む。",
+      ],
+      funFact: "夜になると街灯に引き寄せられることも。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["サツマゴキブリ", "ヤエヤマゴキブリ", "オオゴキブリ", "トビイロゴキブリ"],
+      answer: 0,
+      hint: "縁どりの黄色がヒント。",
+    },
+    victory: {
+      shout: "サツマゴキブリを撃退！",
+      message: "庭木の落ち葉を減らすと出会いが減るよ。",
+    },
+  },
+  {
+    id: "4-2",
+    level: 4,
+    subStage: 2,
+    title: "ヤエヤマゴキブリの力強さ",
+    detailLevel: 4,
+    learning: {
+      topic: "ヤエヤマゴキブリは南の島の大型種",
+      summary: "沖縄や八重山諸島で見られる大型種。翅が短く、脚がとても力強い。",
+      points: [
+        "体長は40mm前後でずんぐりした体。",
+        "翅が短く、ほとんど飛ばない。",
+        "夜行性で落ち葉や果実を食べる。",
+      ],
+      funFact: "防衛のために甘い香りを出すことがある。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["ヤエヤマゴキブリ", "サツマゴキブリ", "モリチャバネゴキブリ", "マダガスカルゴキブリ"],
+      answer: 0,
+      hint: "翅が短い大型の南国ローチ。",
+    },
+    victory: {
+      shout: "ヤエヤマゴキブリを撃退！",
+      message: "甘い餌の放置は厳禁。こまめに片付けよう。",
+    },
+  },
+  {
+    id: "4-3",
+    level: 4,
+    subStage: 3,
+    title: "アフリカヒラタゴキブリのシルエット",
+    detailLevel: 4,
+    learning: {
+      topic: "アフリカヒラタゴキブリはぺたんとした体",
+      summary: "ペットとしても人気の平たいゴキブリ。樹皮のすき間に潜むのが得意。",
+      points: [
+        "体長は30mmほどで扁平な体。",
+        "翅は半透明でまだら模様。",
+        "夜行性で乾いた木の隙間に棲む。",
+      ],
+      funFact: "驚くと素早く木の裏側に回り込むよ。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["アフリカヒラタゴキブリ", "マダガスカルゴキブリ", "オレンジヘッドローチ", "デュビア"],
+      answer: 0,
+      hint: "平たく扁平な体に注目。",
+    },
+    victory: {
+      shout: "アフリカヒラタゴキブリを撃退！",
+      message: "木材のすき間をふさぐと安心。",
+    },
+  },
+  {
+    id: "5-1",
+    level: 5,
+    subStage: 1,
+    title: "マダガスカルオオゴキブリの鳴き声",
+    detailLevel: 5,
+    learning: {
+      topic: "マダガスカルオオゴキブリは威嚇で鳴く",
+      summary: "世界最大級。空気を吐いて「シュー」と鳴くことで有名。",
+      points: [
+        "体長は60mmを超えることもある。",
+        "艶のある黒〜こげ茶で節がはっきり。",
+        "オスは角のような突起があり、威嚇時に鳴く。",
+      ],
+      funFact: "英語ではHissing Cockroach。ペットとしても人気。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["マダガスカルオオゴキブリ", "ヤエヤマゴキブリ", "サツマゴキブリ", "モリチャバネゴキブリ"],
+      answer: 0,
+      hint: "ずっしり太く、角のような突起があるよ。",
+    },
+    victory: {
+      shout: "マダガスカルオオゴキブリを撃退！",
+      message: "厚みのある体でもスプレーでしっかり対応。",
+    },
+  },
+  {
+    id: "5-2",
+    level: 5,
+    subStage: 2,
+    title: "オレンジヘッドローチの配色",
+    detailLevel: 5,
+    learning: {
+      topic: "オレンジヘッドローチは頭部が鮮やか",
+      summary: "飼育餌としても知られる中南米原産の大型種。頭が明るいオレンジ色。",
+      points: [
+        "体長は45mm前後で厚みがある。",
+        "頭部がオレンジ色、胸部は黒。",
+        "湿った木の中や落ち葉を食べる。",
+      ],
+      funFact: "繁殖力が高く、飼育箱では大繁殖する。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["オレンジヘッドローチ", "マダガスカルオオゴキブリ", "アフリカヒラタゴキブリ", "デュビア"],
+      answer: 0,
+      hint: "オレンジ色の頭が最大のヒント。",
+    },
+    victory: {
+      shout: "オレンジヘッドローチを撃退！",
+      message: "生ゴミを密閉して餌を遮断しよう。",
+    },
+  },
+  {
+    id: "5-3",
+    level: 5,
+    subStage: 3,
+    title: "デュビア（アルゼンチンモリゴキブリ）",
+    detailLevel: 5,
+    learning: {
+      topic: "デュビアは温厚でずんぐり",
+      summary: "爬虫類の餌として有名なアルゼンチンモリゴキブリ。メスは翅が短い。",
+      points: [
+        "体長は40〜45mmでずんぐりした体型。",
+        "オスは長い翅、メスは短い翅で丸い。",
+        "暖かく湿った環境で群れを作る。",
+      ],
+      funFact: "騒音が少なく飼育がしやすいと人気。",
+    },
+    question: {
+      prompt: "これは何？",
+      choices: ["デュビア", "オレンジヘッドローチ", "ヤエヤマゴキブリ", "アフリカヒラタゴキブリ"],
+      answer: 0,
+      hint: "丸い体と短い翅の組み合わせ。",
+    },
+    victory: {
+      shout: "デュビアを撃退！",
+      message: "暖かい隙間を作らないのがコツ。",
+    },
+  },
 ];
 
-// rarityに応じた重み（抽選確率）
-const RARITY_WEIGHT = { common: 70, rare: 25, epic: 5 };
+const TOTAL_STAGES = STAGES.length;
 
-// --- 抽象“対象”のSVG（実物は出さない） ---
-function AbstractBug({ intensity = 1, animate = false, theme = "default" }) {
-  const legs = clamp(Math.round(intensity), 0, 10);
-  const jitter = animate ? (Math.sin(Date.now()/200) * 0.5) : 0;
-  const bodyLen = 60 + intensity * 4;
-  const bodyWid = 28 + intensity * 2;
-  const cx = 100, cy = 80 + jitter;
-  const legsArr = Array.from({ length: legs });
-  const fill = theme === "midnight" ? "#111827" : theme === "mint" ? "#D1FAE5" : theme === "sakura" ? "#FCE7F3" : "#E5E7EB";
-  const body = theme === "midnight" ? "#9CA3AF" : "#111827";
-  return (
-    <svg viewBox="0 0 200 160" className="w-full h-full">
-      <rect x="0" y="0" width="200" height="160" fill={fill} />
-      <ellipse cx={cx} cy={cy} rx={bodyLen/2} ry={bodyWid/2} fill={body} opacity={0.5} />
-      <circle cx={cx + bodyLen/2 - 6} cy={cy - 4} r={8} fill={body} opacity={0.4} />
-      {legsArr.map((_, i) => {
-        const side = i % 2 === 0 ? 1 : -1;
-        const off = Math.floor(i/2);
-        const sx = cx + side * (bodyWid/2);
-        const sy = cy - bodyWid/2 + off * (bodyWid/legs || 1);
-        const ex = sx + side * (18 + intensity*1.2);
-        const ey = sy + (side>0? -6:6);
-        return <line key={i} x1={sx} y1={sy} x2={ex} y2={ey} stroke={body} opacity={0.5} strokeWidth={2}/>;
-      })}
-    </svg>
-  );
-}
+const StageBadge = ({ stage, status }) => {
+  const base = "px-3 py-2 rounded-xl border text-xs font-semibold tracking-wide transition-all";
+  const label = `レベル${stage.level}-${stage.subStage}`;
+  if (status === "done") {
+    return <span className={`${base} bg-emerald-500/10 border-emerald-400 text-emerald-700`}>{label}</span>;
+  }
+  if (status === "active") {
+    return <span className={`${base} bg-orange-100 border-orange-300 text-orange-700`}>{label}</span>;
+  }
+  return <span className={`${base} bg-white border-neutral-200 text-neutral-400`}>{label}</span>;
+};
 
-function BreathingGuide({ running }) {
-  const [phase, setPhase] = useState(0); // 0 吸う / 1 止める / 2 吐く
-  const [t, setT] = useState(0);
-  const scheme = [4, 4, 6];
-  useEffect(() => {
-    if (!running) return;
-    let s = performance.now();
-    let id;
-    const tick = (now) => {
-      const dt = (now - s) / 1000; s = now;
-      setT((prev) => {
-        const next = prev + dt; 
-        if (next >= scheme[phase]) { setPhase((p)=> (p+1)%3); return 0; }
-        return next;
-      });
-      id = requestAnimationFrame(tick);
-    };
-    id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
-  }, [running, phase]);
-  const label = ["吸う","止める","吐く"][phase];
-  const total = scheme[phase] || 1;
-  const ratio = t/total;
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-40 h-40 rounded-full border-2 border-neutral-300 grid place-items-center">
-        <div
-          className="transition-all duration-300 ease-linear"
-          style={{ width: `${60 + 60*ratio}%`, height: `${60 + 60*ratio}%` }}
-        >
-          <div className="w-full h-full rounded-full bg-neutral-300/60" />
-        </div>
-      </div>
-      <div className="text-sm text-neutral-600">{label} … {Math.ceil(total - t)} 秒</div>
-    </div>
-  );
-}
-
-const Tab = ({ active, onClick, children }) => (
-  <button onClick={onClick} className={`px-4 py-2 text-sm rounded-full border ${active? "bg-black text-white border-black": "bg-white text-black border-neutral-300 hover:bg-neutral-50"}`}>{children}</button>
+const StageTimeline = ({ currentIndex, phase }) => (
+  <div className="flex flex-wrap gap-2">
+    {STAGES.map((stage, index) => {
+      const isDone = index < currentIndex || (index === currentIndex && phase === "result");
+      const isActive = index === currentIndex && phase !== "result";
+      const status = isDone ? "done" : isActive ? "active" : "todo";
+      return <StageBadge key={stage.id} stage={stage} status={status} />;
+    })}
+  </div>
 );
 
-// 段階プリセット（より子供向けの表現）
-const DEFAULT_STEPS = [
-  { id: "a1", label: "レベル1：まるとせん", intensity: 1, rewardCoin: 5 },
-  { id: "a2", label: "レベル2：あしがすこし", intensity: 3, rewardCoin: 7 },
-  { id: "a3", label: "レベル3：かたちがはっきり", intensity: 5, rewardCoin: 9 },
-  { id: "a4", label: "レベル4：かげのシルエット", intensity: 7, rewardCoin: 12 },
-  { id: "a5", label: "レベル5：ちょっとだけリアル", intensity: 9, rewardCoin: 15 },
-];
+const StageVisual = ({ stage }) => {
+  const palette = [
+    { bg: "#FEF2F2", body: "#F87171", accent: "#FDA4AF", stroke: "#B91C1C" },
+    { bg: "#FFFBEB", body: "#F59E0B", accent: "#FCD34D", stroke: "#B45309" },
+    { bg: "#E0F2FE", body: "#0284C7", accent: "#7DD3FC", stroke: "#0C4A6E" },
+    { bg: "#E2E8F0", body: "#475569", accent: "#CBD5F5", stroke: "#1F2937" },
+    { bg: "#111827", body: "#F97316", accent: "#FACC15", stroke: "#FB923C" },
+  ][Math.min(stage.level - 1, 4)];
 
-// バッジ条件
-const BADGES = [
-  { id: "b_starter", name: "はじめの一歩", desc: "最初のレベルをクリア", rule: (s)=> s.idx >= 0 },
-  { id: "b_streak3", name: "3れんしゅうデー", desc: "3日連続で練習", rule: (s)=> s.streak >= 3 },
-  { id: "b_clear", name: "だんかいマスター", desc: "全レベルをクリア", rule: (s)=> s.idx >= (s.steps?.length-1) },
-];
+  const gradientId = `goki-body-${stage.id}`;
+  const highlightId = `goki-highlight-${stage.id}`;
+  const centerX = 120;
+  const centerY = 92;
+  const bodyLength = 110 + stage.level * 12;
+  const bodyWidth = 48 + stage.level * 6;
+  const segments = 4 + stage.subStage;
 
-// 抽選ヘルパ
-function drawReward(unlockedIds) {
-  const pool = REWARDS.filter(r => !unlockedIds.includes(r.id));
-  if (pool.length === 0) return null;
-  const weighted = [];
-  pool.forEach(r => { const w = RARITY_WEIGHT[r.rarity] || 1; for (let i=0;i<w;i++) weighted.push(r); });
-  return weighted[Math.floor(Math.random()*weighted.length)];
-}
+  const segmentElements = Array.from({ length: segments }, (_, idx) => {
+    const ratio = segments === 1 ? 0 : idx / (segments - 1);
+    const offsetY = (ratio - 0.5) * (26 + stage.level * 3);
+    const rx = bodyLength / 2 - ratio * (10 + stage.level);
+    const ry = bodyWidth / 2 - ratio * (6 + stage.level * 0.5);
+    return (
+      <ellipse
+        key={`segment-${idx}`}
+        cx={centerX}
+        cy={centerY + offsetY}
+        rx={Math.max(rx, 14)}
+        ry={Math.max(ry, 12)}
+        fill={`url(#${gradientId})`}
+        opacity={0.85 - ratio * 0.2}
+      />
+    );
+  });
 
-export default function GokiCare() {
-  const saved = load();
-  const [tab, setTab] = useState(saved.tab || "play");
-  const [steps, setSteps] = useState(saved.steps || DEFAULT_STEPS);
-  const [idx, setIdx] = useState(saved.idx || 0);
-  const [sessionSec, setSessionSec] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [blur, setBlur] = useState(saved.blur ?? 12);
-  const [dim, setDim] = useState(saved.dim ?? 0.2);
-  const [panic, setPanic] = useState(false);
-
-  // ゲーム化要素
-  const [coins, setCoins] = useState(saved.coins || 0);
-  const [xp, setXp] = useState(saved.xp || 0);
-  const level = 1 + Math.floor(xp / 50);
-  const [unlocked, setUnlocked] = useState(saved.unlocked || []); // reward id 配列
-  const [badges, setBadges] = useState(saved.badges || []); // バッジ id 配列
-  const [theme, setTheme] = useState(saved.theme || "default");
-  const [rewardModal, setRewardModal] = useState(null); // {coins, reward}
-
-  // ストリーク（日付）
-  const todayStr = new Date().toDateString();
-  const [lastPlayed, setLastPlayed] = useState(saved.lastPlayed || null);
-  const [streak, setStreak] = useState(saved.streak || 0);
-
-  useEffect(()=>{
-    // セッションタイマー
-    if (!running) return; const id = setInterval(()=> setSessionSec(s=> s+1), 1000); return ()=> clearInterval(id);
-  }, [running]);
-
-  useEffect(()=>{
-    // 保存
-    save({ tab, steps, idx, blur, dim, coins, xp, unlocked, badges, theme, lastPlayed, streak });
-  }, [tab, steps, idx, blur, dim, coins, xp, unlocked, badges, theme, lastPlayed, streak]);
-
-  // ストリーク更新（初期読み込み時）
-  useEffect(()=>{
-    if (!lastPlayed) { setLastPlayed(todayStr); setStreak(1); return; }
-    if (lastPlayed === todayStr) return; // 同日
-    const prev = new Date(lastPlayed); const now = new Date(todayStr);
-    const diff = Math.round((now - prev)/(1000*60*60*24));
-    if (diff === 1) setStreak(s=> s+1); else setStreak(1);
-    setLastPlayed(todayStr);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const cur = steps[idx] || steps[0];
-
-  const applyBadges = (stateLike) => {
-    const newOnes = BADGES.filter(b => !badges.includes(b.id) && b.rule({ ...stateLike, steps })).map(b=> b.id);
-    if (newOnes.length) setBadges(prev=> [...prev, ...newOnes]);
-  };
-
-  const handleFinish = () => {
-    setRunning(false);
-    setSessionSec(0);
-
-    // コイン & XP
-    const gainCoin = cur?.rewardCoin || 5;
-    const gainXp = 10 + (cur?.intensity || 1);
-
-    // 抽選でごほうび
-    const reward = drawReward(unlocked);
-    setCoins(c=> c + gainCoin);
-    setXp(x=> x + gainXp);
-
-    if (reward) {
-      setUnlocked(u=> [...u, reward.id]);
-      if (reward.type === "theme") {
-        // テーマ即適用も可（選択はRewardsタブで変更可）
-        if (theme === "default") setTheme(reward.id.startsWith("th_")? reward.id.split("_")[1] : theme);
+  const legLength = 34 + stage.level * 8;
+  const legWidth = 2.8 + stage.level * 0.4;
+  const legOffsets = [-1.1, 0, 1.1];
+  const legs = [];
+  legOffsets.forEach((offset, rowIdx) => {
+    [-1, 1].forEach((side) => {
+      const x1 = centerX + side * (bodyLength / 2 - 8);
+      const y1 = centerY + offset * (bodyWidth / 1.8);
+      const bend = 12 + rowIdx * 4;
+      const x2 = x1 + side * (legLength + rowIdx * 4);
+      const y2 = y1 + (side === -1 ? -bend : bend);
+      legs.push(
+        <line
+          key={`leg-${rowIdx}-${side}`}
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke={palette.stroke}
+          strokeWidth={legWidth}
+          strokeLinecap="round"
+          opacity={0.85}
+        />
+      );
+      if (stage.level >= 3) {
+        const x3 = x2 + side * (14 + stage.level * 2);
+        const y3 = y2 + (side === -1 ? -10 : 10);
+        legs.push(
+          <line
+            key={`leg-tip-${rowIdx}-${side}`}
+            x1={x2}
+            y1={y2}
+            x2={x3}
+            y2={y3}
+            stroke={palette.stroke}
+            strokeWidth={legWidth * 0.7}
+            strokeLinecap="round"
+            opacity={0.7}
+          />
+        );
       }
-    }
+    });
+  });
 
-    setRewardModal({ coins: gainCoin, xp: gainXp, reward });
-
-    // 次へ
-    setIdx((i)=> clamp(i+1, 0, steps.length-1));
-
-    // バッジ条件チェック
-    applyBadges({ idx: idx+1, streak });
-  };
-
-  const resetView = () => { setBlur(12); setDim(0.2); };
-
-  // 見た目テーマ
-  const appBg = theme === "midnight" ? "bg-slate-900 text-slate-100" : theme === "mint" ? "bg-emerald-50" : theme === "sakura" ? "bg-pink-50" : "bg-neutral-50";
+  const antennae = [-1, 1].map((side) => {
+    const startX = centerX + side * (bodyWidth * 0.45);
+    const startY = centerY - bodyWidth * 0.95;
+    const ctrlX = startX + side * (48 + stage.subStage * 6);
+    const ctrlY = startY - (60 + stage.level * 6);
+    const endX = startX + side * (88 + stage.level * 12);
+    const endY = startY - (70 + stage.level * 9);
+    return (
+      <path
+        key={`antenna-${side}`}
+        d={`M ${startX} ${startY} Q ${ctrlX} ${ctrlY} ${endX} ${endY}`}
+        stroke={palette.stroke}
+        strokeWidth={2.3}
+        strokeLinecap="round"
+        fill="none"
+        opacity={0.8}
+      />
+    );
+  });
 
   return (
-    <div className={`min-h-screen ${appBg} p-4 md:p-8 transition-colors`}>
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">GokiCare — ごほうびトレーナー</h1>
-            <p className="text-sm opacity-70">抽象イラストで“ちょっとずつ慣れる”。クリアでもらえるコインとごほうびで継続を支援。</p>
-          </div>
-          <div className="text-right">
-            <div className="text-sm">Lv {level} ・ XP {xp}</div>
-            <div className="text-sm">コイン {coins} ・ 連続 {streak}日</div>
-          </div>
-        </header>
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-inner">
+      <svg viewBox="0 0 240 180" className="w-full h-full">
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={palette.accent} />
+            <stop offset="70%" stopColor={palette.body} />
+            <stop offset="100%" stopColor={palette.stroke} />
+          </linearGradient>
+          <radialGradient id={highlightId} cx="20%" cy="20%" r="80%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
+            <stop offset="100%" stopColor={palette.accent} stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="240" height="180" fill={palette.bg} />
+        <g opacity={0.25} fill="#ffffff">
+          <circle cx="28" cy="32" r="18" />
+          <circle cx="214" cy="146" r="22" />
+          <circle cx="210" cy="32" r="14" />
+        </g>
+        {segmentElements}
+        <ellipse
+          cx={centerX}
+          cy={centerY - bodyWidth * 0.58}
+          rx={bodyWidth * 0.45}
+          ry={bodyWidth * 0.35}
+          fill={palette.stroke}
+          opacity={0.85}
+        />
+        <ellipse
+          cx={centerX}
+          cy={centerY - bodyWidth * 0.32}
+          rx={bodyWidth * 0.6}
+          ry={bodyWidth * 0.48}
+          fill={`url(#${gradientId})`}
+        />
+        <ellipse
+          cx={centerX}
+          cy={centerY + bodyWidth * 0.08}
+          rx={bodyWidth * 0.85}
+          ry={bodyWidth * 0.62}
+          fill={`url(#${gradientId})`}
+          opacity={0.92}
+        />
+        <ellipse
+          cx={centerX}
+          cy={centerY}
+          rx={bodyWidth * 0.7}
+          ry={bodyWidth * 0.45}
+          fill={`url(#${highlightId})`}
+          opacity={0.5}
+        />
+        {legs}
+        {antennae}
+        <circle cx={centerX - bodyWidth * 0.25} cy={centerY - bodyWidth * 0.72} r={4 + stage.level} fill="#111827" opacity={0.65} />
+        <circle cx={centerX + bodyWidth * 0.25} cy={centerY - bodyWidth * 0.72} r={4 + stage.level} fill="#111827" opacity={0.65} />
+      </svg>
+      <div className="absolute left-3 top-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
+        レベル{stage.level}-{stage.subStage}
+      </div>
+      <div className="absolute bottom-3 right-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-neutral-600 shadow-sm">
+        {stage.learning.topic}
+      </div>
+    </div>
+  );
+};
 
-        <div className="flex gap-2 mb-4">
-          {[
-            ["play","あそぶ"],
-            ["learn","まなぶ"],
-            ["rewards","ごほうび"],
-            ["log","きろく"],
-            ["settings","せってい"],
-          ].map(([key, label]) => (
-            <Tab key={key} active={tab===key} onClick={()=> setTab(key)}>{label}</Tab>
+const VictoryScene = ({ stage }) => {
+  const level = Math.min(stage.level || 1, 5);
+  const palette = [
+    { glow: "#FCD34D", beam: "#F97316" },
+    { glow: "#34D399", beam: "#10B981" },
+    { glow: "#60A5FA", beam: "#2563EB" },
+    { glow: "#A78BFA", beam: "#7C3AED" },
+    { glow: "#FBBF24", beam: "#F59E0B" },
+  ][level - 1];
+  const gradientId = `victory-${stage.id}`;
+  return (
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[32px] border-2 border-emerald-300 bg-emerald-50 shadow-inner">
+      <svg viewBox="0 0 240 180" className="w-full h-full">
+        <defs>
+          <radialGradient id={gradientId} cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="100%" stopColor={palette.glow} stopOpacity="0.2" />
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="240" height="180" fill={`url(#${gradientId})`} />
+        <g stroke={palette.beam} strokeWidth="12" strokeLinecap="round" opacity="0.45">
+          <line x1="20" y1="160" x2="220" y2="20" />
+          <line x1="20" y1="20" x2="220" y2="160" />
+        </g>
+        <g transform="translate(120 90)" opacity="0.75">
+          <ellipse cx="0" cy="24" rx="58" ry="24" fill="rgba(16,185,129,0.3)" />
+          <path
+            d="M -36 -20 C -18 -60, 18 -60, 36 -20 L 30 28 C 10 36, -10 36, -30 28 Z"
+            fill="#1F2937"
+          />
+          <line x1="-50" y1="-10" x2="-90" y2="-40" stroke="#1F2937" strokeWidth="6" strokeLinecap="round" />
+          <line x1="50" y1="-10" x2="90" y2="-40" stroke="#1F2937" strokeWidth="6" strokeLinecap="round" />
+          <circle cx="-12" cy="-32" r="6" fill="#FBBF24" />
+          <circle cx="12" cy="-32" r="6" fill="#FBBF24" />
+        </g>
+        <g stroke={palette.beam} strokeWidth="4" strokeLinecap="round">
+          <line x1="30" y1="30" x2="70" y2="20" />
+          <line x1="210" y1="120" x2="170" y2="130" />
+          <line x1="120" y1="0" x2="120" y2="26" />
+        </g>
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-4xl font-black text-emerald-700 drop-shadow-sm">
+        撃退成功！
+      </div>
+    </div>
+  );
+};
+
+const LearningCard = ({ stage, onStart }) => (
+  <section className="space-y-5 rounded-[32px] border border-orange-200 bg-white/95 p-8 shadow-sm">
+    <div className="text-sm font-semibold text-orange-500">STEP 1: ゴキブリの知識をインプット</div>
+    <h2 className="text-2xl font-bold text-neutral-900">{stage.title}</h2>
+    <p className="text-sm leading-relaxed text-neutral-600">{stage.learning.summary}</p>
+    <ul className="list-disc space-y-2 pl-5 text-sm text-neutral-700">
+      {stage.learning.points.map((line, idx) => (
+        <li key={idx}>{line}</li>
+      ))}
+    </ul>
+    <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-xs text-neutral-600">
+      {stage.learning.funFact}
+    </div>
+    <div className="flex justify-end">
+      <button
+        onClick={onStart}
+        className="rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition-transform hover:scale-[1.02]"
+      >
+        理解した！クイズへ
+      </button>
+    </div>
+  </section>
+);
+
+const QuizCard = ({ stage, onChoose, feedback }) => (
+  <section className="space-y-6 rounded-[32px] border border-neutral-200 bg-white/95 p-8 shadow-sm">
+    <div className="text-sm font-semibold text-rose-500">STEP 2: これは何？クイズ</div>
+    <div className="grid gap-6 md:grid-cols-2">
+      <StageVisual stage={stage} />
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-bold text-neutral-900">{stage.question.prompt}</h3>
+          <p className="text-xs text-neutral-500">ヒント: {stage.question.hint}</p>
+        </div>
+        <div className="grid gap-3">
+          {stage.question.choices.map((choice, idx) => (
+            <button
+              key={choice}
+              onClick={() => onChoose(idx)}
+              className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-left text-sm font-semibold text-neutral-700 transition-colors hover:border-rose-400 hover:bg-rose-50"
+            >
+              {String.fromCharCode(65 + idx)}. {choice}
+            </button>
           ))}
         </div>
-
-        {panic && (
-          <div className="mb-4 p-4 rounded-xl bg-red-50/80 border border-red-200">
-            <div className="font-semibold mb-2">いったん きゅうけい</div>
-            <p className="text-sm mb-3 opacity-80">画面の動きを止めました。ゆっくり すって、止めて、はいて。水をちょっと飲もう。</p>
-            <div className="flex gap-2">
-              <button className="px-3 py-2 rounded-lg bg-black text-white" onClick={()=> setPanic(false)}>さいかい</button>
-              <button className="px-3 py-2 rounded-lg bg-neutral-200" onClick={()=> { setPanic(false); setRunning(false); resetView(); }}>きょうはおわり</button>
-            </div>
+        {feedback && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+            {feedback}
           </div>
         )}
+      </div>
+    </div>
+  </section>
+);
 
-        {tab === "learn" && (
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold">こわさは“がくしゅう”で弱くなる</h2>
-            <ul className="list-disc pl-5 text-sm space-y-2 opacity-80">
-              <li>むりはしない。こわくなったらパニックボタン。</li>
-              <li>1レベル 1–3分。こわさが少し下がるのを待つのがコツ。</li>
-              <li>実物は出さない。まる・せん・かげで“れんそう”に慣れる。</li>
-            </ul>
-            <div className="rounded-xl border bg-white/70 backdrop-blur p-4 text-sm">
-              <div className="font-semibold mb-1">リフレーム</div>
-              <p>体のドキドキは「ほんとうのあぶないサイン」じゃないこともある。“ちょっとだけ続ける”をえらべたら◎。</p>
-            </div>
-          </section>
-        )}
+const ResultCard = ({ stage, onNext, isFinal }) => (
+  <section className="space-y-6 rounded-[32px] border border-emerald-300 bg-white/95 p-8 shadow-lg">
+    <div className="text-sm font-semibold text-emerald-600">STEP 3: 撃退タイム</div>
+    <VictoryScene stage={stage} />
+    <div className="space-y-2 text-center">
+      <h3 className="text-2xl font-bold text-neutral-900">{stage.victory.shout}</h3>
+      <p className="text-sm text-neutral-600">{stage.victory.message}</p>
+    </div>
+    <div className="flex justify-center">
+      <button
+        onClick={onNext}
+        className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition-transform hover:scale-[1.02]"
+      >
+        {isFinal ? "コンプリート！結果を見る" : "次のステージへ"}
+      </button>
+    </div>
+  </section>
+);
 
-        {tab === "play" && (
-          <section className="grid md:grid-cols-2 gap-4">
-            <div className="rounded-xl border bg-white/80 backdrop-blur p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm opacity-70">レベル</div>
-                <div className="text-xs opacity-70">{idx+1} / {steps.length}</div>
+const CompletionCard = ({ onRestart }) => (
+  <section className="space-y-6 rounded-[32px] border border-emerald-300 bg-white p-8 text-center shadow-xl">
+    <div className="text-sm font-semibold text-emerald-600">全ステージクリア！</div>
+    <h2 className="text-3xl font-bold text-neutral-900">イラストから実写まで制覇したよ！</h2>
+    <p className="text-sm text-neutral-600">
+      ゴキブリの特徴を学びながら15問を連続クリア。観察力と知識がしっかり身につきました。
+    </p>
+    <div className="mx-auto w-full max-w-md">
+      <VictoryScene stage={{ id: "complete", level: 5 }} />
+    </div>
+    <button
+      onClick={onRestart}
+      className="rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition-transform hover:scale-[1.02]"
+    >
+      もう一度挑戦する
+    </button>
+  </section>
+);
+
+export default function App() {
+  const [stageIndex, setStageIndex] = useState(0);
+  const [phase, setPhase] = useState("learn");
+  const [feedback, setFeedback] = useState("");
+  const [isCleared, setIsCleared] = useState(false);
+
+  const stage = STAGES[stageIndex];
+  const clearedCount = stageIndex + (phase === "result" ? 1 : 0);
+  const progress = Math.min(clearedCount / TOTAL_STAGES, 1);
+
+  const handleStartQuiz = () => {
+    setFeedback("");
+    setPhase("quiz");
+  };
+
+  const handleChoice = (choiceIndex) => {
+    if (phase !== "quiz") return;
+    if (choiceIndex === stage.question.answer) {
+      setFeedback("");
+      setPhase("result");
+    } else {
+      setFeedback("もう一度よく観察してみよう！");
+    }
+  };
+
+  const handleNext = () => {
+    if (stageIndex >= STAGES.length - 1) {
+      setIsCleared(true);
+      return;
+    }
+    setStageIndex((prev) => prev + 1);
+    setPhase("learn");
+    setFeedback("");
+  };
+
+  const handleRestart = () => {
+    setStageIndex(0);
+    setPhase("learn");
+    setFeedback("");
+    setIsCleared(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 text-neutral-900">
+      <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
+        <header className="space-y-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rose-400">Goki Explorer</p>
+            <h1 className="text-3xl font-black text-neutral-900 sm:text-4xl">ゴキブリ識別クエスト</h1>
+            <p className="text-sm text-neutral-600">
+              レベル1-1から5-3まで、合計15枚のゴキブリ画像で「これは何？」に挑戦。学んだ特徴を頼りに正しい種類を選ぼう。
+            </p>
+          </div>
+          <div className="rounded-3xl border border-neutral-200 bg-white/80 p-5 shadow-sm">
+            <div className="flex flex-col gap-2">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-orange-400 via-rose-400 to-emerald-400 transition-all duration-500"
+                  style={{ width: `${Math.round(progress * 100)}%` }}
+                />
               </div>
-              <div className="font-semibold">{cur?.label}</div>
-              <div className="aspect-[5/4] rounded-xl overflow-hidden border mt-3 relative">
-                <div className="absolute inset-0" style={{ filter: `blur(${blur}px) brightness(${1-dim})` }}>
-                  <AbstractBug intensity={cur?.intensity || 1} animate={running} theme={theme} />
-                </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div>
-                  <div className="text-xs opacity-70 mb-1">ぼかし（強→弱）</div>
-                  <input type="range" min={0} max={20} value={blur} onChange={(e)=> setBlur(parseInt(e.target.value))} className="w-full" />
-                </div>
-                <div>
-                  <div className="text-xs opacity-70 mb-1">暗さ（強→弱）</div>
-                  <input type="range" min={0} max={0.8} step={0.05} value={dim} onChange={(e)=> setDim(parseFloat(e.target.value))} className="w-full" />
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center gap-2">
-                <button onClick={()=> setRunning((r)=> !r)} className="px-3 py-2 rounded-lg bg-black text-white">{running? "いちじていし": "スタート"}</button>
-                <button onClick={handleFinish} className="px-3 py-2 rounded-lg bg-neutral-200">クリア！</button>
-                <button onClick={()=> setPanic(true)} className="px-3 py-2 rounded-lg bg-red-600 text-white">パニック</button>
-                <div className="ml-auto text-xs opacity-70">けいか: {Math.floor(sessionSec/60)}:{String(sessionSec%60).padStart(2,'0')}</div>
-              </div>
-
-              <div className="mt-3">
-                <div className="text-xs opacity-70 mb-1">SUDS（いまのこわさ）</div>
-                <input type="range" min={0} max={100} defaultValue={40} className="w-full" />
-              </div>
-            </div>
-
-            <div className="rounded-xl border bg-white/80 backdrop-blur p-4 flex flex-col items-center gap-4">
-              <div className="text-sm opacity-70">呼吸ガイド</div>
-              <BreathingGuide running={true} />
-              <div className="text-xs opacity-70">すって4秒・とめて4秒・はいて6秒</div>
-            </div>
-          </section>
-        )}
-
-        {tab === "rewards" && (
-          <section className="grid md:grid-cols-2 gap-4">
-            <div className="rounded-xl border bg-white/80 backdrop-blur p-4">
-              <div className="font-semibold mb-2">もっているごほうび</div>
-              <div className="grid grid-cols-2 gap-2">
-                {unlocked.length === 0 && <div className="text-sm opacity-70">まだないよ。レベルをクリアすると もらえるよ！</div>}
-                {unlocked.map(id => {
-                  const r = REWARDS.find(x=> x.id===id);
-                  if (!r) return null;
-                  const isTheme = r.type === "theme";
-                  return (
-                    <div key={r.id} className="border rounded-lg p-3 flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-medium">{r.name}</div>
-                        <div className="text-xs opacity-60">{r.rarity}</div>
-                      </div>
-                      {isTheme && (
-                        <button className="px-2 py-1 text-sm rounded bg-black text-white" onClick={()=> setTheme(r.id.split("_")[1])}>つかう</button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-xl border bg-white/80 backdrop-blur p-4">
-              <div className="font-semibold mb-2">バッジ</div>
-              <div className="grid grid-cols-2 gap-2">
-                {BADGES.map(b => {
-                  const has = badges.includes(b.id);
-                  return (
-                    <div key={b.id} className={`border rounded-lg p-3 ${has? "": "opacity-40"}`}>
-                      <div className="text-sm font-medium">{b.name}</div>
-                      <div className="text-xs opacity-70">{b.desc}</div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {tab === "log" && (
-          <section className="rounded-xl border bg-white/80 backdrop-blur p-4">
-            <div className="text-sm opacity-70 mb-2">しんちょく</div>
-            <div className="w-full h-3 rounded-full bg-neutral-200 overflow-hidden">
-              <div className="h-full bg-black" style={{ width: `${((idx+1)/steps.length)*100}%`}} />
-            </div>
-            <div className="text-xs opacity-70 mt-2">到達レベル: {idx+1} / {steps.length}</div>
-            <div className="text-xs opacity-70 mt-1">れんぞく: {streak}日 / コイン: {coins} / XP: {xp} / Lv {level}</div>
-          </section>
-        )}
-
-        {tab === "settings" && (
-          <section className="rounded-xl border bg-white/80 backdrop-blur p-4 space-y-4">
-            <div className="font-semibold">レベル編集</div>
-            <div className="space-y-2">
-              {steps.map((s, i)=> (
-                <div key={s.id} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2">
-                  <input className="border rounded-lg p-2 text-sm" value={s.label} onChange={(e)=>{
-                    const v = e.target.value; setSteps(prev=> prev.map((p,pi)=> pi===i? {...p,label:v}:p));
-                  }} />
-                  <div className="text-xs opacity-70">強度</div>
-                  <input type="number" min={1} max={10} value={s.intensity} onChange={(e)=>{
-                    const v = clamp(parseInt(e.target.value||"1"),1,10);
-                    setSteps(prev=> prev.map((p,pi)=> pi===i? {...p,intensity:v}:p));
-                  }} className="w-20 border rounded-lg p-2 text-sm" />
-                  <button className="px-2 py-2 rounded-lg bg-neutral-100" onClick={()=> setSteps(prev=> prev.filter((_,pi)=> pi!==i))}>削除</button>
-                </div>
-              ))}
-              <button className="px-3 py-2 rounded-lg bg-black text-white" onClick={()=> setSteps(prev=> [...prev, { id: crypto.randomUUID(), label: "あたらしいレベル", intensity: 5, rewardCoin: 5 }])}>レベルを追加</button>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="px-3 py-2 rounded-lg bg-neutral-200" onClick={()=> { setIdx(0); resetView(); }}>はじめから</button>
-              <button className="px-3 py-2 rounded-lg bg-red-600 text-white" onClick={()=> { localStorage.removeItem(LS_KEY); location.reload(); }}>ぜんぶリセット</button>
-            </div>
-            <div className="text-xs opacity-70">※ これは医療機器でも診断ツールでもありません。つらいときは専門家へ。</div>
-          </section>
-        )}
-
-        {rewardModal && (
-          <div className="fixed inset-0 bg-black/40 grid place-items-center p-4" onClick={()=> setRewardModal(null)}>
-            <div className="max-w-sm w-full bg-white rounded-2xl p-5 shadow-xl" onClick={(e)=> e.stopPropagation()}>
-              <div className="text-lg font-bold mb-2">クリア！ごほうび</div>
-              <div className="text-sm mb-3">コイン +{rewardModal.coins} / XP +{rewardModal.xp}</div>
-              {rewardModal.reward ? (
-                <div className="mb-3">
-                  <div className="text-sm">あたらしく てにいれた！</div>
-                  <div className="mt-2 p-3 border rounded-lg">
-                    <div className="font-medium">{rewardModal.reward.name}</div>
-                    <div className="text-xs opacity-60">{rewardModal.reward.rarity}</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-3 text-sm opacity-70">今回は しゅつげん なし（つぎに期待！）</div>
-              )}
-              <div className="flex gap-2">
-                <button className="px-3 py-2 rounded-lg bg-black text-white" onClick={()=> { setRewardModal(null); setTab("rewards"); }}>ごほうびを見る</button>
-                <button className="px-3 py-2 rounded-lg bg-neutral-200" onClick={()=> setRewardModal(null)}>とじる</button>
+              <div className="flex flex-col justify-between text-xs text-neutral-500 sm:flex-row">
+                <span>現在: レベル{stage.level}-{stage.subStage}</span>
+                <span>進行度: {Math.round(progress * 100)}%</span>
+                <span>残り: {TOTAL_STAGES - Math.min(clearedCount, TOTAL_STAGES)} 問</span>
               </div>
             </div>
           </div>
+          <StageTimeline currentIndex={stageIndex} phase={phase} />
+        </header>
+
+        {isCleared ? (
+          <CompletionCard onRestart={handleRestart} />
+        ) : (
+          <>
+            {phase === "learn" && <LearningCard stage={stage} onStart={handleStartQuiz} />}
+            {phase === "quiz" && <QuizCard stage={stage} onChoose={handleChoice} feedback={feedback} />}
+            {phase === "result" && <ResultCard stage={stage} onNext={handleNext} isFinal={stageIndex === STAGES.length - 1} />}
+          </>
         )}
 
-        <footer className="mt-8 text-center text-[11px] opacity-60">
-          © {new Date().getFullYear()} GokiCare — client-side only / no tracking
+        <footer className="py-6 text-center text-[11px] text-neutral-500">
+          © {new Date().getFullYear()} Goki Explorer — オフライン学習用コンテンツ
         </footer>
       </div>
     </div>
