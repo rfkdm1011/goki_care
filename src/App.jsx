@@ -410,6 +410,16 @@ const STAGES = [
 
 const TOTAL_STAGES = STAGES.length;
 
+const getStageName = (stage) => {
+  if (!stage) return "";
+  const { question, title } = stage;
+  if (question && Array.isArray(question.choices)) {
+    const answerIndex = Math.max(0, Math.min(question.answer ?? 0, question.choices.length - 1));
+    return question.choices[answerIndex];
+  }
+  return title;
+};
+
 const StageBadge = ({ stage, status }) => {
   const base = "px-3 py-2 rounded-xl border text-xs font-semibold tracking-wide transition-all";
   const label = `レベル${stage.level}-${stage.subStage}`;
@@ -433,7 +443,26 @@ const StageTimeline = ({ currentIndex, phase }) => (
   </div>
 );
 
-const StageVisual = ({ stage }) => {
+const StageVisual = ({ stage, interactive = false, onActivate, isTarget = false, instruction }) => {
+  const baseClass =
+    "relative aspect-[4/3] w-full overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-inner";
+
+  const handleKeyDown = (event) => {
+    if (!interactive) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onActivate?.();
+    }
+  };
+
+  if (!stage) {
+    return (
+      <div className={`${baseClass} flex items-center justify-center bg-neutral-50 text-sm font-medium text-neutral-400`}>
+        出現を待っています…
+      </div>
+    );
+  }
+
   const palette = [
     { bg: "#FEF2F2", body: "#F87171", accent: "#FDA4AF", stroke: "#B91C1C" },
     { bg: "#FFFBEB", body: "#F59E0B", accent: "#FCD34D", stroke: "#B45309" },
@@ -532,9 +561,21 @@ const StageVisual = ({ stage }) => {
     );
   });
 
+  const interactiveClass = interactive
+    ? "cursor-pointer transition-transform hover:scale-[1.02] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-400"
+    : "";
+  const targetClass = isTarget ? "ring-4 ring-rose-200" : "";
+
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-inner">
-      <svg viewBox="0 0 240 180" className="w-full h-full">
+    <div
+      className={`${baseClass} ${interactiveClass} ${targetClass}`.trim()}
+      onClick={interactive ? onActivate : undefined}
+      onKeyDown={handleKeyDown}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? `${getStageName(stage)}をタップ` : undefined}
+    >
+      <svg viewBox="0 0 240 180" className="h-full w-full">
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={palette.accent} />
@@ -595,6 +636,13 @@ const StageVisual = ({ stage }) => {
       <div className="absolute bottom-3 right-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-neutral-600 shadow-sm">
         {stage.learning.topic}
       </div>
+      {interactive && (
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
+          <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold text-rose-500 shadow-sm">
+            {instruction || "ターゲットならタップで撃退"}
+          </span>
+        </div>
+      )}
     </div>
   );
 };
@@ -648,53 +696,76 @@ const VictoryScene = ({ stage }) => {
 };
 
 const LearningCard = ({ stage, onStart }) => (
-  <section className="space-y-5 rounded-[32px] border border-orange-200 bg-white/95 p-8 shadow-sm">
+  <section className="space-y-6 rounded-[32px] border border-orange-200 bg-white/95 p-8 shadow-sm">
     <div className="text-sm font-semibold text-orange-500">STEP 1: ゴキブリの知識をインプット</div>
-    <h2 className="text-2xl font-bold text-neutral-900">{stage.title}</h2>
-    <p className="text-sm leading-relaxed text-neutral-600">{stage.learning.summary}</p>
-    <ul className="list-disc space-y-2 pl-5 text-sm text-neutral-700">
-      {stage.learning.points.map((line, idx) => (
-        <li key={idx}>{line}</li>
-      ))}
-    </ul>
-    <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-xs text-neutral-600">
-      {stage.learning.funFact}
-    </div>
-    <div className="flex justify-end">
-      <button
-        onClick={onStart}
-        className="rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition-transform hover:scale-[1.02]"
-      >
-        理解した！クイズへ
-      </button>
+    <div className="grid gap-6 md:grid-cols-[1.1fr_minmax(0,0.9fr)]">
+      <StageVisual stage={stage} isTarget />
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-600">
+            ターゲット: {getStageName(stage)}
+          </span>
+          <h2 className="text-2xl font-bold text-neutral-900">{stage.title}</h2>
+        </div>
+        <p className="text-sm leading-relaxed text-neutral-600">{stage.learning.summary}</p>
+        <ul className="list-disc space-y-2 pl-5 text-sm text-neutral-700">
+          {stage.learning.points.map((line, idx) => (
+            <li key={idx}>{line}</li>
+          ))}
+        </ul>
+        <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-xs text-neutral-600">
+          {stage.learning.funFact}
+        </div>
+        <div className="rounded-2xl bg-neutral-50 px-4 py-3 text-xs text-neutral-500">
+          出現したゴキブリがターゲットと一致したら即タップ。それ以外は落ち着いてやり過ごそう。
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={onStart}
+            className="rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition-transform hover:scale-[1.02]"
+          >
+            理解した。殺す。
+          </button>
+        </div>
+      </div>
     </div>
   </section>
 );
 
-const QuizCard = ({ stage, onChoose, feedback }) => (
+const HuntCard = ({ stage, currentRoach, onRoachTap, onSkip, message, encounterCount }) => (
   <section className="space-y-6 rounded-[32px] border border-neutral-200 bg-white/95 p-8 shadow-sm">
-    <div className="text-sm font-semibold text-rose-500">STEP 2: これは何？クイズ</div>
-    <div className="grid gap-6 md:grid-cols-2">
-      <StageVisual stage={stage} />
+    <div className="text-sm font-semibold text-rose-500">STEP 2: ターゲットを撃退</div>
+    <div className="grid gap-6 md:grid-cols-[1.2fr_minmax(0,0.9fr)]">
+      <StageVisual
+        stage={currentRoach}
+        interactive
+        onActivate={onRoachTap}
+        instruction="ターゲットなら即タップ！"
+      />
       <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-bold text-neutral-900">{stage.question.prompt}</h3>
+        <div className="space-y-2">
+          <h3 className="text-lg font-bold text-neutral-900">ターゲットが出るまで待ち構えよう</h3>
           <p className="text-xs text-neutral-500">ヒント: {stage.question.hint}</p>
         </div>
-        <div className="grid gap-3">
-          {stage.question.choices.map((choice, idx) => (
-            <button
-              key={choice}
-              onClick={() => onChoose(idx)}
-              className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-left text-sm font-semibold text-neutral-700 transition-colors hover:border-rose-400 hover:bg-rose-50"
-            >
-              {String.fromCharCode(65 + idx)}. {choice}
-            </button>
-          ))}
+        <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-xs text-rose-600">
+          ターゲット: {getStageName(stage)}
+          <span className="ml-2 text-[10px] text-rose-400">（出現回数 {encounterCount} 回）</span>
         </div>
-        {feedback && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
-            {feedback}
+        <div className="space-y-1 text-sm text-neutral-600">
+          <p>・表示されたゴキブリがターゲットならタップして撃退。</p>
+          <p>・違う種類のときは落ち着いて「スルーする」を押して次を待とう。</p>
+          <p>・誤ってタップすると学習からやり直しだ。</p>
+        </div>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-700 transition-colors hover:border-rose-400 hover:bg-rose-50"
+        >
+          スルーする（別のゴキブリを待つ）
+        </button>
+        {message && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-600">
+            {message}
           </div>
         )}
       </div>
@@ -704,7 +775,7 @@ const QuizCard = ({ stage, onChoose, feedback }) => (
 
 const ResultCard = ({ stage, onNext, isFinal }) => (
   <section className="space-y-6 rounded-[32px] border border-emerald-300 bg-white/95 p-8 shadow-lg">
-    <div className="text-sm font-semibold text-emerald-600">STEP 3: 撃退タイム</div>
+    <div className="text-sm font-semibold text-emerald-600">STEP 3: 撃退完了</div>
     <VictoryScene stage={stage} />
     <div className="space-y-2 text-center">
       <h3 className="text-2xl font-bold text-neutral-900">{stage.victory.shout}</h3>
@@ -721,12 +792,41 @@ const ResultCard = ({ stage, onNext, isFinal }) => (
   </section>
 );
 
+const FailCard = ({ stage, mistake, onRetry }) => {
+  const mistakeName = getStageName(mistake) || "別のゴキブリ";
+  return (
+    <section className="space-y-6 rounded-[32px] border border-rose-200 bg-white/95 p-8 shadow-lg">
+      <div className="text-sm font-semibold text-rose-500">STEP 2: 撃退失敗</div>
+      <div className="grid gap-6 md:grid-cols-[1.1fr_minmax(0,0.9fr)]">
+        <StageVisual stage={mistake} />
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-neutral-900">
+            これは {mistakeName} だった！
+          </h3>
+          <p className="text-sm leading-relaxed text-neutral-600">
+            狙うべきは {getStageName(stage)}。違う種類を叩いてしまったので、もう一度特徴を頭に入れよう。
+          </p>
+          <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-xs text-rose-600">
+            ターゲット: {getStageName(stage)} / 誤爆: {mistakeName}
+          </div>
+          <button
+            onClick={onRetry}
+            className="rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition-transform hover:scale-[1.02]"
+          >
+            学び直して再挑戦
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const CompletionCard = ({ onRestart }) => (
   <section className="space-y-6 rounded-[32px] border border-emerald-300 bg-white p-8 text-center shadow-xl">
     <div className="text-sm font-semibold text-emerald-600">全ステージクリア！</div>
-    <h2 className="text-3xl font-bold text-neutral-900">イラストから実写まで制覇したよ！</h2>
+    <h2 className="text-3xl font-bold text-neutral-900">全15種のターゲットを撃退完了！</h2>
     <p className="text-sm text-neutral-600">
-      ゴキブリの特徴を学びながら15問を連続クリア。観察力と知識がしっかり身につきました。
+      特徴を覚えてターゲットが現れた瞬間にタップできるようになった。観察力と反応速度が磨かれたね。
     </p>
     <div className="mx-auto w-full max-w-md">
       <VictoryScene stage={{ id: "complete", level: 5 }} />
@@ -743,43 +843,90 @@ const CompletionCard = ({ onRestart }) => (
 export default function App() {
   const [stageIndex, setStageIndex] = useState(0);
   const [phase, setPhase] = useState("learn");
-  const [feedback, setFeedback] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
   const [isCleared, setIsCleared] = useState(false);
+  const [currentRoach, setCurrentRoach] = useState(null);
+  const [encounterCount, setEncounterCount] = useState(0);
+  const [mistakeRoach, setMistakeRoach] = useState(null);
 
   const stage = STAGES[stageIndex];
   const clearedCount = stageIndex + (phase === "result" ? 1 : 0);
   const progress = Math.min(clearedCount / TOTAL_STAGES, 1);
 
-  const handleStartQuiz = () => {
-    setFeedback("");
-    setPhase("quiz");
+  const clearCurrentRoach = () => {
+    setCurrentRoach(null);
+    setEncounterCount(0);
   };
 
-  const handleChoice = (choiceIndex) => {
-    if (phase !== "quiz") return;
-    if (choiceIndex === stage.question.answer) {
-      setFeedback("");
+  const createEncounter = (avoidId) => {
+    const others = STAGES.filter((item) => item.id !== stage.id);
+    const shuffled = [...others].sort(() => Math.random() - 0.5);
+    const sample = shuffled.slice(0, Math.min(3, shuffled.length));
+    const candidates = [stage, ...sample];
+    const filtered = avoidId ? candidates.filter((item) => item.id !== avoidId) : candidates;
+    const pool = filtered.length > 0 ? filtered : candidates;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  const handleStartHunt = () => {
+    const next = createEncounter();
+    setCurrentRoach(next);
+    setEncounterCount(1);
+    setStatusMessage("ターゲットが現れるまで目を凝らそう。違う種類はスルー！");
+    setMistakeRoach(null);
+    setPhase("hunt");
+  };
+
+  const handleSkip = () => {
+    if (phase !== "hunt") return;
+    const next = createEncounter(currentRoach?.id);
+    setCurrentRoach(next);
+    setEncounterCount((prev) => (prev === 0 ? 1 : prev + 1));
+    setStatusMessage("別のゴキブリが現れた。焦らずターゲットを見極めよう。");
+  };
+
+  const handleRoachTap = () => {
+    if (phase !== "hunt" || !currentRoach) return;
+    if (currentRoach.id === stage.id) {
+      setStatusMessage("");
       setPhase("result");
+      setMistakeRoach(null);
+      clearCurrentRoach();
     } else {
-      setFeedback("もう一度よく観察してみよう！");
+      setMistakeRoach(currentRoach);
+      setStatusMessage("");
+      setPhase("fail");
+      clearCurrentRoach();
     }
   };
 
   const handleNext = () => {
+    clearCurrentRoach();
+    setStatusMessage("");
     if (stageIndex >= STAGES.length - 1) {
       setIsCleared(true);
+      setPhase("result");
       return;
     }
     setStageIndex((prev) => prev + 1);
     setPhase("learn");
-    setFeedback("");
+    setMistakeRoach(null);
+  };
+
+  const handleRetry = () => {
+    setPhase("learn");
+    setStatusMessage("");
+    clearCurrentRoach();
+    setMistakeRoach(null);
   };
 
   const handleRestart = () => {
     setStageIndex(0);
     setPhase("learn");
-    setFeedback("");
+    setStatusMessage("");
     setIsCleared(false);
+    clearCurrentRoach();
+    setMistakeRoach(null);
   };
 
   return (
@@ -788,9 +935,9 @@ export default function App() {
         <header className="space-y-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rose-400">Goki Explorer</p>
-            <h1 className="text-3xl font-black text-neutral-900 sm:text-4xl">ゴキブリ識別クエスト</h1>
+            <h1 className="text-3xl font-black text-neutral-900 sm:text-4xl">ゴキブリ撃退任務</h1>
             <p className="text-sm text-neutral-600">
-              レベル1-1から5-3まで、合計15枚のゴキブリ画像で「これは何？」に挑戦。学んだ特徴を頼りに正しい種類を選ぼう。
+              レベル1-1から5-3まで、合計15種のゴキブリを学び、ターゲットが現れた瞬間にタップして撃退しよう。
             </p>
           </div>
           <div className="rounded-3xl border border-neutral-200 bg-white/80 p-5 shadow-sm">
@@ -804,7 +951,7 @@ export default function App() {
               <div className="flex flex-col justify-between text-xs text-neutral-500 sm:flex-row">
                 <span>現在: レベル{stage.level}-{stage.subStage}</span>
                 <span>進行度: {Math.round(progress * 100)}%</span>
-                <span>残り: {TOTAL_STAGES - Math.min(clearedCount, TOTAL_STAGES)} 問</span>
+                <span>残り: {TOTAL_STAGES - Math.min(clearedCount, TOTAL_STAGES)} 体</span>
               </div>
             </div>
           </div>
@@ -815,9 +962,21 @@ export default function App() {
           <CompletionCard onRestart={handleRestart} />
         ) : (
           <>
-            {phase === "learn" && <LearningCard stage={stage} onStart={handleStartQuiz} />}
-            {phase === "quiz" && <QuizCard stage={stage} onChoose={handleChoice} feedback={feedback} />}
-            {phase === "result" && <ResultCard stage={stage} onNext={handleNext} isFinal={stageIndex === STAGES.length - 1} />}
+            {phase === "learn" && <LearningCard stage={stage} onStart={handleStartHunt} />}
+            {phase === "hunt" && (
+              <HuntCard
+                stage={stage}
+                currentRoach={currentRoach}
+                onRoachTap={handleRoachTap}
+                onSkip={handleSkip}
+                message={statusMessage}
+                encounterCount={encounterCount}
+              />
+            )}
+            {phase === "fail" && <FailCard stage={stage} mistake={mistakeRoach} onRetry={handleRetry} />}
+            {phase === "result" && (
+              <ResultCard stage={stage} onNext={handleNext} isFinal={stageIndex === STAGES.length - 1} />
+            )}
           </>
         )}
 
