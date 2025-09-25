@@ -45,7 +45,7 @@ const DIFFICULTIES = {
     title: '地獄モード',
     description: '地獄から這い出た禍々しいシルエット。動きもスピードも桁違い。',
     roachRatio: 0.50,
-    spawnInterval: 100,
+    spawnInterval: 300,
     speedRange: [300, 1000],
     spawnCountRange: [4, 5],
     killTarget: 300,
