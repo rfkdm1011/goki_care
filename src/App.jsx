@@ -605,8 +605,8 @@ export default function App() {
     <div className={appClassName}>
       <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-4 py-8">
         <header className="space-y-2 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-emerald-300">GOKI WARS</p>
-          <h1 className="text-3xl font-black text-white sm:text-4xl">ズミンゴの逆襲</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-emerald-300">ZUMI WARS</p>
+          <h1 className="text-3xl font-black text-white sm:text-4xl">Gの逆襲</h1>
           <p className="text-xs text-emerald-100/80">
             この世に蔓延るゴキブリを一匹残らず駆逐するため、伝説の戦士ズミンゴが立ち上がる。対象だけをタップして銀河を守れ！
           </p>
