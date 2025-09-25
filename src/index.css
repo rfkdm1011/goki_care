@@ -8,51 +8,295 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Noto Sans JP', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #f5f5f5;
+  font-family: 'Inter', 'Noto Sans JP', 'M PLUS Rounded 1c', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  background: radial-gradient(circle at 20% 20%, #0f172a 0%, #020617 55%, #01010f 100%);
+  color: #e2e8f0;
+}
+
+button {
+  font-family: inherit;
 }
 
 * {
   box-sizing: border-box;
 }
 
-.roach-sweep {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation-name: roach-scamper;
-  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
-  animation-iteration-count: infinite;
-  animation-fill-mode: both;
+.encounter-object {
+  position: absolute;
+  left: -28vw;
+  top: 50%;
+  transform: translateY(-50%);
+  animation-name: scurryAcross;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  animation-duration: 5s;
+  will-change: transform;
 }
 
-@keyframes roach-scamper {
+.touch-target {
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.touch-target:active {
+  transform: scale(0.88);
+  filter: brightness(1.1);
+}
+
+.roach-graphic {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.roach-graphic .antenna {
+  position: absolute;
+  width: 2px;
+  height: 22px;
+  top: -12px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 9999px;
+}
+
+.roach-graphic .antenna.left {
+  left: 20%;
+  transform: rotate(-18deg);
+}
+
+.roach-graphic .antenna.right {
+  right: 20%;
+  transform: rotate(18deg);
+}
+
+.roach-easy {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fcd34d, #f97316 70%, #c2410c 100%);
+  box-shadow: 0 6px 14px rgba(249, 115, 22, 0.35);
+}
+
+.roach-easy .eye {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1f2937;
+  top: 34%;
+}
+
+.roach-easy .eye.left {
+  left: 32%;
+}
+
+.roach-easy .eye.right {
+  right: 32%;
+}
+
+.roach-easy .smile {
+  position: absolute;
+  width: 22px;
+  height: 12px;
+  border-bottom: 3px solid #1f2937;
+  border-radius: 0 0 18px 18px;
+  bottom: 24%;
+}
+
+.roach-normal {
+  width: 64px;
+  height: 34px;
+  border-radius: 70% 70% 55% 55%;
+  background: linear-gradient(180deg, #82451d 0%, #3f220c 45%, #1f1308 100%);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.5);
+  overflow: hidden;
+}
+
+.roach-normal .segment {
+  position: absolute;
+  width: 14px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  top: -2px;
+}
+
+.roach-normal .segment:nth-child(1) {
+  left: 18%;
+}
+
+.roach-normal .segment:nth-child(2) {
+  left: 44%;
+}
+
+.roach-normal .segment:nth-child(3) {
+  right: 18%;
+}
+
+.roach-hard {
+  width: 72px;
+  height: 30px;
+  border-radius: 60% 60% 45% 45%;
+  background: linear-gradient(180deg, #2f1b0a 0%, #0f0b07 60%, #050402 100%);
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.12), 0 10px 18px rgba(15, 23, 42, 0.7);
+}
+
+.roach-hard .segment.long {
+  position: absolute;
+  width: 46px;
+  height: 8px;
+  border-radius: 999px;
+  top: 22%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.roach-hard .segment.short {
+  position: absolute;
+  width: 34px;
+  height: 8px;
+  border-radius: 999px;
+  bottom: 18%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.roach-inferno {
+  width: 68px;
+  height: 32px;
+  border-radius: 60% 60% 45% 45%;
+  background: radial-gradient(circle at 50% 40%, rgba(239, 68, 68, 0.9), rgba(124, 45, 18, 0.9) 60%, rgba(15, 23, 42, 0.95));
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.45), inset 0 0 12px rgba(15, 23, 42, 0.8);
+}
+
+.roach-inferno .glow {
+  position: absolute;
+  width: 42px;
+  height: 18px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 50%, rgba(252, 211, 77, 0.9), rgba(239, 68, 68, 0.3));
+}
+
+.roach-inferno .core {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(248, 250, 252, 0.9), rgba(248, 113, 113, 0.6));
+}
+
+.decoy {
+  position: relative;
+  pointer-events: none;
+}
+
+.decoy-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #38bdf8, #0ea5e9 70%, #0369a1 100%);
+  box-shadow: 0 6px 14px rgba(56, 189, 248, 0.4);
+}
+
+.decoy-light {
+  width: 52px;
+  height: 52px;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.85), rgba(234, 179, 8, 0.65));
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  box-shadow: 0 8px 18px rgba(234, 179, 8, 0.35);
+}
+
+.decoy-capsule {
+  width: 52px;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f97316 0%, #fb7185 100%);
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.decoy-capsule span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.decoy-drone {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.85), rgba(16, 185, 129, 0.8), rgba(6, 95, 70, 0.9));
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.decoy-drone .wing {
+  position: absolute;
+  width: 46px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.4);
+  top: 12px;
+}
+
+.decoy-drone .wing.left {
+  left: -34px;
+}
+
+.decoy-drone .wing.right {
+  right: -34px;
+}
+
+.decoy-spark {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.85), rgba(59, 130, 246, 0.8));
+  transform: rotate(45deg);
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.4);
+}
+
+.decoy-hero {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(248, 250, 252, 0.95), rgba(191, 219, 254, 0.8));
+  box-shadow: 0 6px 16px rgba(148, 163, 184, 0.4);
+}
+
+@keyframes scurryAcross {
   0% {
-    transform: translate3d(var(--roach-start-x, -240px), var(--roach-y-start, 0px), 0)
-      rotate(var(--roach-tilt-start, -8deg));
+    transform: translate(-20vw, 0);
     opacity: 0;
   }
-  12% {
+  10% {
     opacity: 1;
   }
   50% {
-    transform: translate3d(var(--roach-mid-x, 0px), var(--roach-y-mid, 0px), 0)
-      rotate(var(--roach-tilt-mid, 0deg));
-    opacity: 1;
-  }
-  80% {
+    transform: translate(45vw, 0);
     opacity: 1;
   }
   100% {
-    transform: translate3d(var(--roach-end-x, 260px), var(--roach-y-end, 0px), 0)
-      rotate(var(--roach-tilt-end, 8deg));
+    transform: translate(110vw, 0);
     opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .roach-sweep {
+  .encounter-object {
     animation: none !important;
-    transform: translate3d(0, 0, 0) !important;
-    opacity: 1 !important;
+    transform: translate(0, 0) !important;
+  }
+  .touch-target {
+    transition: none;
   }
 }
