@@ -34,6 +34,16 @@ button {
   will-change: transform;
 }
 
+.encounter-object.reduce-motion {
+  animation: none !important;
+  opacity: 1;
+}
+
+.touch-target.reduce-motion {
+  transition: none;
+}
+
+
 .touch-target {
   width: 84px;
   height: 84px;
@@ -292,11 +302,12 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .encounter-object {
+  body:not(.motion-override-animated) .encounter-object {
     animation: none !important;
     opacity: 1;
   }
-  .touch-target {
+
+  body:not(.motion-override-animated) .touch-target {
     transition: none;
   }
 }
