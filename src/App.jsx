@@ -46,7 +46,7 @@ const DIFFICULTIES = {
     description: '地獄から這い出た禍々しいシルエット。動きもスピードも桁違い。',
     roachRatio: 0.85,
     spawnInterval: 550,
-    speedRange: [1200, 2200],
+    speedRange: [500, 800],
     spawnCountRange: [4, 5],
     killTarget: 300,
     decoys: ['capsule', 'drone', 'spark'],
