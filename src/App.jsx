@@ -451,6 +451,15 @@ export default function App() {
   const isLastStage = stageIndex === STAGES.length - 1;
   const difficultyConfig = difficulty ? DIFFICULTIES[difficulty] : null;
   const killTarget = difficultyConfig?.killTarget ?? DEFAULT_KILL_TARGET;
+  const stageAdjustedRoachRatio = useMemo(() => {
+    if (!difficultyConfig) {
+      return 0;
+    }
+    const penaltyPerStage = 0.1;
+    const minimumRatio = 0.2;
+    const adjusted = difficultyConfig.roachRatio - stageIndex * penaltyPerStage;
+    return Math.max(adjusted, minimumRatio);
+  }, [difficultyConfig, stageIndex]);
   const shouldReduceMotion = motionOverride ?? prefersReducedMotion;
   const isMotionManuallyEnabled = motionOverride === false;
   const appClassName = `min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white${
@@ -504,7 +513,7 @@ export default function App() {
 
       for (let index = 0; index < spawnCount; index += 1) {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`;
-        const isRoach = Math.random() < difficultyConfig.roachRatio;
+        const isRoach = Math.random() < stageAdjustedRoachRatio;
         const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
         const top = randomBetween(8, 80);
         const scale = Math.random() * 0.4 + 0.8;
