@@ -214,13 +214,16 @@ function DecoyGraphic({ variant }) {
   }
 }
 
-function FloatingObject({ object, difficulty, onTap, prefersReducedMotion }) {
+function FloatingObject({ object, difficulty, onTap, reduceMotion }) {
   const objectStyle = {
     top: `${object.top}%`,
     animationDuration: `${object.duration}ms`,
   };
 
-  if (prefersReducedMotion) {
+  const containerClassName = reduceMotion ? 'encounter-object reduce-motion' : 'encounter-object';
+  const targetClassName = reduceMotion ? 'touch-target reduce-motion' : 'touch-target';
+
+  if (reduceMotion) {
     objectStyle.left = `${object.staticLeft}%`;
     objectStyle.animation = 'none';
     objectStyle.transform = 'translate(-50%, -50%)';
@@ -229,12 +232,12 @@ function FloatingObject({ object, difficulty, onTap, prefersReducedMotion }) {
 
   return (
     <div
-      className="encounter-object"
+      className={containerClassName}
       style={objectStyle}
     >
       <button
         type="button"
-        className="touch-target"
+        className={targetClassName}
         onClick={() => onTap(object)}
         style={{ transform: `scale(${object.scale})` }}
       >
@@ -414,6 +417,7 @@ export default function App() {
   const [killCount, setKillCount] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
   const [activeObjects, setActiveObjects] = useState([]);
+  const [motionOverride, setMotionOverride] = useState(null);
 
   const prefersReducedMotion = usePrefersReducedMotion();
   const timersRef = useRef([]);
@@ -422,6 +426,11 @@ export default function App() {
   const stage = useMemo(() => STAGES[stageIndex], [stageIndex]);
   const isLastStage = stageIndex === STAGES.length - 1;
   const difficultyConfig = difficulty ? DIFFICULTIES[difficulty] : null;
+  const shouldReduceMotion = motionOverride ?? prefersReducedMotion;
+  const isMotionManuallyEnabled = motionOverride === false;
+  const appClassName = `min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white${
+    isMotionManuallyEnabled ? ' motion-override-animated' : ''
+  }`;
 
   useEffect(() => {
     return () => {
@@ -431,6 +440,24 @@ export default function App() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const { body } = document;
+
+    if (isMotionManuallyEnabled) {
+      body.classList.add('motion-override-animated');
+    } else {
+      body.classList.remove('motion-override-animated');
+    }
+
+    return () => {
+      body.classList.remove('motion-override-animated');
+    };
+  }, [isMotionManuallyEnabled]);
 
   useEffect(() => {
     timersRef.current.forEach(clearTimeout);
@@ -544,7 +571,7 @@ export default function App() {
   }, [lives]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white">
+    <div className={appClassName}>
       <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-4 py-8">
         <header className="space-y-2 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-emerald-300">GOKI WARS</p>
@@ -578,6 +605,36 @@ export default function App() {
                 </div>
               )}
             </div>
+            {prefersReducedMotion && !isMotionManuallyEnabled && (
+              <div className="mt-4 rounded-2xl border border-emerald-200/30 bg-emerald-500/10 px-4 py-3 text-[11px] text-emerald-100/80">
+                <p className="font-semibold text-emerald-200">アニメーションを簡略化しています</p>
+                <p className="mt-1 leading-relaxed">
+                  端末の設定に合わせて動きの演出を抑えています。同じ演出を見たい場合は、下のボタンからアニメーションを有効化できます。
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMotionOverride(false)}
+                  className="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-600 px-3 py-2 text-[11px] font-semibold text-slate-900 shadow shadow-emerald-900/30 transition hover:brightness-105"
+                >
+                  アニメーションを有効にする
+                </button>
+              </div>
+            )}
+            {isMotionManuallyEnabled && (
+              <div className="mt-4 rounded-2xl border border-emerald-200/30 bg-emerald-500/10 px-4 py-3 text-[11px] text-emerald-100/80">
+                <p className="font-semibold text-emerald-200">アニメーションを手動で有効化中</p>
+                <p className="mt-1 leading-relaxed">
+                  端末設定に関係なく演出を表示しています。簡略表示に戻す場合は下のボタンを選んでください。
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMotionOverride(null)}
+                  className="mt-3 w-full rounded-xl border border-emerald-300/50 px-3 py-2 text-[11px] font-semibold text-emerald-100 transition hover:bg-emerald-300/10"
+                >
+                  端末設定に合わせる
+                </button>
+              </div>
+            )}
           </section>
         )}
 
@@ -611,7 +668,7 @@ export default function App() {
                   object={object}
                   difficulty={difficulty}
                   onTap={handleObjectTap}
-                  prefersReducedMotion={prefersReducedMotion}
+                  reduceMotion={shouldReduceMotion}
                 />
               ))}
               {activeObjects.length === 0 && (
