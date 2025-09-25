@@ -228,7 +228,13 @@ function FloatingObject({ object, difficulty, onTap, reduceMotion }) {
     animationDuration: `${object.duration}ms`,
   };
 
-  const containerClassName = reduceMotion ? 'encounter-object reduce-motion' : 'encounter-object';
+  const containerClassName = [
+    'encounter-object',
+    reduceMotion ? 'reduce-motion' : null,
+    reduceMotion ? null : `from-${object.direction}`,
+  ]
+    .filter(Boolean)
+    .join(' ');
   const targetClassName = reduceMotion ? 'touch-target reduce-motion' : 'touch-target';
 
   if (reduceMotion) {
@@ -504,7 +510,8 @@ export default function App() {
         const scale = Math.random() * 0.4 + 0.8;
         const variant = variantPool[randomBetween(0, variantPool.length - 1)];
         const staticLeft = randomBetween(12, 88);
-        const newObject = { id, isRoach, duration, top, scale, variant, staticLeft };
+        const direction = Math.random() < 0.5 ? 'left' : 'right';
+        const newObject = { id, isRoach, duration, top, scale, variant, staticLeft, direction };
         setActiveObjects((prev) => [...prev, newObject]);
         const timeout = setTimeout(() => {
           setActiveObjects((prev) => prev.filter((item) => item.id !== id));
