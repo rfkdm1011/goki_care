@@ -294,7 +294,7 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .encounter-object {
     animation: none !important;
-    transform: translate(0, 0) !important;
+    opacity: 1;
   }
   .touch-target {
     transition: none;

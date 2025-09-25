@@ -107,6 +107,42 @@ const STAGES = [
 
 const randomBetween = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const updatePreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+    };
+
+    updatePreference();
+
+    const handleChange = (event) => {
+      setPrefersReducedMotion(event.matches);
+    };
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => {
+        mediaQuery.removeEventListener('change', handleChange);
+      };
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => {
+      mediaQuery.removeListener(handleChange);
+    };
+  }, []);
+
+  return prefersReducedMotion;
+}
+
 function RoachGraphic({ difficulty }) {
   switch (difficulty) {
     case 'easy':
@@ -178,14 +214,23 @@ function DecoyGraphic({ variant }) {
   }
 }
 
-function FloatingObject({ object, difficulty, onTap }) {
+function FloatingObject({ object, difficulty, onTap, prefersReducedMotion }) {
+  const objectStyle = {
+    top: `${object.top}%`,
+    animationDuration: `${object.duration}ms`,
+  };
+
+  if (prefersReducedMotion) {
+    objectStyle.left = `${object.staticLeft}%`;
+    objectStyle.animation = 'none';
+    objectStyle.transform = 'translate(-50%, -50%)';
+    objectStyle.opacity = 1;
+  }
+
   return (
     <div
       className="encounter-object"
-      style={{
-        top: `${object.top}%`,
-        animationDuration: `${object.duration}ms`,
-      }}
+      style={objectStyle}
     >
       <button
         type="button"
@@ -370,6 +415,7 @@ export default function App() {
   const [lives, setLives] = useState(MAX_LIVES);
   const [activeObjects, setActiveObjects] = useState([]);
 
+  const prefersReducedMotion = usePrefersReducedMotion();
   const timersRef = useRef([]);
   const intervalRef = useRef(null);
 
@@ -407,7 +453,8 @@ export default function App() {
       const scale = Math.random() * 0.4 + 0.8;
       const variantPool = difficultyConfig.decoys;
       const variant = variantPool[randomBetween(0, variantPool.length - 1)];
-      const newObject = { id, isRoach, duration, top, scale, variant };
+      const staticLeft = randomBetween(12, 88);
+      const newObject = { id, isRoach, duration, top, scale, variant, staticLeft };
       setActiveObjects((prev) => [...prev, newObject]);
       const timeout = setTimeout(() => {
         setActiveObjects((prev) => prev.filter((item) => item.id !== id));
@@ -559,7 +606,13 @@ export default function App() {
                 TARGET: {stage.species}
               </div>
               {activeObjects.map((object) => (
-                <FloatingObject key={object.id} object={object} difficulty={difficulty} onTap={handleObjectTap} />
+                <FloatingObject
+                  key={object.id}
+                  object={object}
+                  difficulty={difficulty}
+                  onTap={handleObjectTap}
+                  prefersReducedMotion={prefersReducedMotion}
+                />
               ))}
               {activeObjects.length === 0 && (
                 <div className="flex h-full items-center justify-center text-sm text-emerald-100/50">
