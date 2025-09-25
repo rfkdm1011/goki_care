@@ -24,14 +24,22 @@ button {
 
 .encounter-object {
   position: absolute;
-  left: -28vw;
   top: 50%;
   transform: translateY(-50%);
-  animation-name: scurryAcross;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
   animation-duration: 5s;
   will-change: transform;
+}
+
+.encounter-object.from-left {
+  left: -28vw;
+  animation-name: scurryAcrossFromLeft;
+}
+
+.encounter-object.from-right {
+  right: -28vw;
+  animation-name: scurryAcrossFromRight;
 }
 
 .encounter-object.reduce-motion {
@@ -283,7 +291,7 @@ button {
   box-shadow: 0 6px 16px rgba(148, 163, 184, 0.4);
 }
 
-@keyframes scurryAcross {
+@keyframes scurryAcrossFromLeft {
   0% {
     transform: translate(-20vw, 0);
     opacity: 0;
@@ -297,6 +305,24 @@ button {
   }
   100% {
     transform: translate(110vw, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes scurryAcrossFromRight {
+  0% {
+    transform: translate(20vw, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-45vw, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-110vw, 0);
     opacity: 0;
   }
 }
