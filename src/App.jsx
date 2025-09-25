@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 const MAX_LIVES = 3;
-const KILLS_TO_CLEAR = 10;
+const DEFAULT_KILL_TARGET = 10;
 
 const DIFFICULTIES = {
   easy: {
@@ -9,8 +9,10 @@ const DIFFICULTIES = {
     title: 'EASY モード',
     description: 'ズミンゴ初陣。デフォルメされた愛嬌たっぷりのゴキのみ登場。',
     roachRatio: 0.55,
-    spawnInterval: 1500,
-    speedRange: [4500, 6200],
+    spawnInterval: 1400,
+    speedRange: [4200, 5600],
+    spawnCountRange: [1, 1],
+    killTarget: 10,
     decoys: ['badge', 'light', 'hero'],
     flavor: 'タップゲームが初めてでも安心して訓練できる難易度。',
   },
@@ -18,9 +20,11 @@ const DIFFICULTIES = {
     label: 'Normal',
     title: 'NORMAL モード',
     description: 'リアルに近いシルエットが登場。油断すると見逃すぞ。',
-    roachRatio: 0.6,
-    spawnInterval: 1300,
-    speedRange: [4000, 5600],
+    roachRatio: 0.65,
+    spawnInterval: 1100,
+    speedRange: [3000, 4400],
+    spawnCountRange: [2, 3],
+    killTarget: 30,
     decoys: ['badge', 'light', 'capsule'],
     flavor: 'ズミンゴの正確なタップが求められる銀河標準訓練。',
   },
@@ -28,9 +32,11 @@ const DIFFICULTIES = {
     label: 'Hard',
     title: 'HARD モード',
     description: '動きが速く、光沢のあるリアルなボディが迫ってくる。',
-    roachRatio: 0.65,
-    spawnInterval: 1100,
-    speedRange: [3400, 4800],
+    roachRatio: 0.75,
+    spawnInterval: 800,
+    speedRange: [2000, 3200],
+    spawnCountRange: [3, 4],
+    killTarget: 80,
     decoys: ['light', 'capsule', 'drone'],
     flavor: '一瞬の迷いが命取り。歴戦のズミンゴだけが耐えられる。',
   },
@@ -38,9 +44,11 @@ const DIFFICULTIES = {
     label: '地獄モード',
     title: '地獄モード',
     description: '地獄から這い出た禍々しいシルエット。動きもスピードも桁違い。',
-    roachRatio: 0.7,
-    spawnInterval: 900,
-    speedRange: [3000, 4400],
+    roachRatio: 0.85,
+    spawnInterval: 550,
+    speedRange: [1200, 2200],
+    spawnCountRange: [4, 5],
+    killTarget: 300,
     decoys: ['capsule', 'drone', 'spark'],
     flavor: 'ズミンゴ伝説の最終訓練。精神力も試される最恐の戦場。',
   },
@@ -247,7 +255,7 @@ function FloatingObject({ object, difficulty, onTap, reduceMotion }) {
   );
 }
 
-function StageIntro({ stage, onStart }) {
+function StageIntro({ stage, killTarget, onStart }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-black/30 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">ステージ{stage.order}</p>
@@ -264,8 +272,14 @@ function StageIntro({ stage, onStart }) {
           </li>
         ))}
       </ul>
-      <div className="mt-5 rounded-2xl border border-emerald-400/50 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-100">
-        <span className="font-semibold text-emerald-200">ズミンゴ指令:</span> {stage.tip}
+      <div className="mt-5 space-y-3">
+        <div className="rounded-2xl border border-emerald-400/50 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-100">
+          <span className="font-semibold text-emerald-200">ズミンゴ指令:</span> {stage.tip}
+        </div>
+        <div className="rounded-2xl border border-emerald-200/40 bg-slate-900/60 px-4 py-3 text-xs text-emerald-100/80">
+          この作戦の撃破目標は <span className="font-semibold text-emerald-200">{killTarget}体</span>。
+          誤射を避けつつ目標数を倒せ。
+        </div>
       </div>
       <button
         type="button"
@@ -278,7 +292,7 @@ function StageIntro({ stage, onStart }) {
   );
 }
 
-function StageClear({ stage, isLastStage, onNext, onFinal, onBackToMenu }) {
+function StageClear({ stage, isLastStage, killTarget, onNext, onFinal, onBackToMenu }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/40 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">ズミンゴ勝利</p>
@@ -286,7 +300,7 @@ function StageClear({ stage, isLastStage, onNext, onFinal, onBackToMenu }) {
         {stage.species}を完全駆逐！
       </h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
-        ズミンゴはターゲットを10匹撃破し、{stage.codename} セクターの制圧に成功した。
+        ズミンゴはターゲットを{killTarget}匹撃破し、{stage.codename} セクターの制圧に成功した。
       </p>
       {isLastStage ? (
         <>
@@ -389,7 +403,8 @@ function DifficultySelect({ onSelect }) {
       <p className="text-sm font-semibold text-emerald-200">作戦難易度を選択</p>
       <h2 className="mt-1 text-3xl font-black text-white">GOKI WARS ズミンゴの逆襲</h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
-        タップでゴキブリだけを駆逐せよ。10匹仕留めればステージクリア。誤射はライフを奪い、3回ミスすると作戦は失敗となる。
+        タップでゴキブリだけを駆逐せよ。難易度ごとに設定された撃破数を達成すればステージクリア。
+        誤射はライフを奪い、3回ミスすると作戦は失敗となる。
       </p>
       <div className="mt-6 grid gap-4">
         {Object.entries(DIFFICULTIES).map(([key, config]) => (
@@ -403,6 +418,9 @@ function DifficultySelect({ onSelect }) {
             <p className="mt-1 text-lg font-bold text-white">{config.title}</p>
             <p className="mt-2 text-xs text-emerald-100/80">{config.description}</p>
             <p className="mt-3 text-[11px] text-emerald-100/60">{config.flavor}</p>
+            <p className="mt-3 text-[11px] text-emerald-100/70">
+              撃破目標: {config.killTarget}体 / 出現数: {config.spawnCountRange ? `${config.spawnCountRange[0]}〜${config.spawnCountRange[1]}` : '1'}体
+            </p>
           </button>
         ))}
       </div>
@@ -426,6 +444,7 @@ export default function App() {
   const stage = useMemo(() => STAGES[stageIndex], [stageIndex]);
   const isLastStage = stageIndex === STAGES.length - 1;
   const difficultyConfig = difficulty ? DIFFICULTIES[difficulty] : null;
+  const killTarget = difficultyConfig?.killTarget ?? DEFAULT_KILL_TARGET;
   const shouldReduceMotion = motionOverride ?? prefersReducedMotion;
   const isMotionManuallyEnabled = motionOverride === false;
   const appClassName = `min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white${
@@ -473,20 +492,25 @@ export default function App() {
     }
 
     const spawn = () => {
-      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const isRoach = Math.random() < difficultyConfig.roachRatio;
-      const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
-      const top = randomBetween(8, 80);
-      const scale = Math.random() * 0.4 + 0.8;
+      const [minSpawn, maxSpawn] = difficultyConfig.spawnCountRange ?? [1, 1];
+      const spawnCount = randomBetween(minSpawn, maxSpawn);
       const variantPool = difficultyConfig.decoys;
-      const variant = variantPool[randomBetween(0, variantPool.length - 1)];
-      const staticLeft = randomBetween(12, 88);
-      const newObject = { id, isRoach, duration, top, scale, variant, staticLeft };
-      setActiveObjects((prev) => [...prev, newObject]);
-      const timeout = setTimeout(() => {
-        setActiveObjects((prev) => prev.filter((item) => item.id !== id));
-      }, duration);
-      timersRef.current.push(timeout);
+
+      for (let index = 0; index < spawnCount; index += 1) {
+        const id = `${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`;
+        const isRoach = Math.random() < difficultyConfig.roachRatio;
+        const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
+        const top = randomBetween(8, 80);
+        const scale = Math.random() * 0.4 + 0.8;
+        const variant = variantPool[randomBetween(0, variantPool.length - 1)];
+        const staticLeft = randomBetween(12, 88);
+        const newObject = { id, isRoach, duration, top, scale, variant, staticLeft };
+        setActiveObjects((prev) => [...prev, newObject]);
+        const timeout = setTimeout(() => {
+          setActiveObjects((prev) => prev.filter((item) => item.id !== id));
+        }, duration);
+        timersRef.current.push(timeout);
+      }
     };
 
     spawn();
@@ -522,7 +546,7 @@ export default function App() {
     if (object.isRoach) {
       setKillCount((prev) => {
         const next = prev + 1;
-        if (next >= KILLS_TO_CLEAR) {
+        if (next >= killTarget) {
           setPhase('stageClear');
         }
         return next;
@@ -600,7 +624,7 @@ export default function App() {
                 <div className="text-right">
                   <p className="text-[11px] uppercase tracking-[0.25em] text-emerald-300">残り撃破数</p>
                   <p className="text-sm font-semibold text-white">
-                    {Math.max(KILLS_TO_CLEAR - killCount, 0)} 体
+                    {Math.max(killTarget - killCount, 0)} 体
                   </p>
                 </div>
               )}
@@ -638,13 +662,13 @@ export default function App() {
           </section>
         )}
 
-        {phase === 'intro' && <StageIntro stage={stage} onStart={handleStartStage} />}
+        {phase === 'intro' && <StageIntro stage={stage} killTarget={killTarget} onStart={handleStartStage} />}
 
         {phase === 'play' && (
           <section className="flex flex-col gap-4">
             <div className="rounded-3xl border border-emerald-200/30 bg-emerald-500/10 px-5 py-4 text-xs text-emerald-100/80 shadow-inner shadow-black/30 backdrop-blur">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-emerald-200">撃破数 {killCount} / {KILLS_TO_CLEAR}</span>
+                <span className="font-semibold text-emerald-200">撃破数 {killCount} / {killTarget}</span>
                 <div className="flex items-center gap-1 text-lg">
                   {livesDisplay.map((alive, index) => (
                     <span key={index} className={alive ? 'text-rose-300' : 'text-slate-600'}>
@@ -684,6 +708,7 @@ export default function App() {
           <StageClear
             stage={stage}
             isLastStage={isLastStage}
+            killTarget={killTarget}
             onNext={handleNextStage}
             onFinal={handleGoToFinalReport}
             onBackToMenu={handleBackToMenu}
