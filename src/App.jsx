@@ -1134,10 +1134,7 @@ export default function App() {
             </div>
             {prefersReducedMotion && !isMotionManuallyEnabled && (
               <div className="mt-4 rounded-2xl border border-emerald-200/30 bg-emerald-500/10 px-4 py-3 text-[11px] text-emerald-100/80">
-                <p className="font-semibold text-emerald-200">アニメーションを簡略化しています</p>
-                <p className="mt-1 leading-relaxed">
-                  端末の設定に合わせて動きの演出を抑えています。同じ演出を見たい場合は、下のボタンからアニメーションを有効化できます。
-                </p>
+           
                 <button
                   type="button"
                   onClick={() => setMotionOverride(false)}
