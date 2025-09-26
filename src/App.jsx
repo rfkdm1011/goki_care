@@ -1106,9 +1106,8 @@ export default function App() {
           <img
             src={logoImage}
             alt="GokiCare ロゴ"
-            className="mx-auto h-16 w-16 rounded-full border border-emerald-400/60 bg-slate-900/60 p-2 shadow-lg shadow-emerald-900/40"
+            className="mx-auto h-16 w-auto shadow-lg shadow-emerald-900/40"
           />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-emerald-300">ZUMI WARS</p>
           <h1 className="text-3xl font-black text-white sm:text-4xl">Gの逆襲</h1>
           <p className="text-xs text-emerald-100/80">
             この世に蔓延るゴキブリを一匹残らず駆逐するため、伝説の戦士ズミンゴが立ち上がる。対象だけをタップして銀河を守れ！
