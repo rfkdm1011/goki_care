@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import chabaneImage from '../chabane.PNG';
+import chabaneImage from '../chabane.png';
 
 const MAX_LIVES = 3;
 const DEFAULT_KILL_TARGET = 10;
