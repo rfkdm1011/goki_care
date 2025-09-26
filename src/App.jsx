@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import chabaneImage from '../chabane.png';
+import yamatoImage from '../yamato.png';
+import kuroImage from '../kuro.png';
+import wamonImage from '../wamon.png';
 
 const MAX_LIVES = 3;
 const DEFAULT_KILL_TARGET = 10;
@@ -89,6 +92,8 @@ const STAGES = [
     tip: '玄関マットと落ち葉を掃除して侵入経路を断とう。',
     stageType: 'shooter',
     instructions: '画面をタップしてレーザーを発射。降下してくるゴキブリを逃さず撃ち落とせ。',
+    roachImage: yamatoImage,
+    roachAlt: 'ヤマトゴキブリのターゲット',
   },
   {
     id: 'stage-3',
@@ -105,6 +110,8 @@ const STAGES = [
     tip: '排水溝ネットと生ゴミ管理で補給路を断つ。',
     stageType: 'classic',
     instructions: '画面を横切るターゲットからゴキブリだけをタップで駆逐。誤射に注意。',
+    roachImage: kuroImage,
+    roachAlt: 'クロゴキブリのターゲット',
   },
   {
     id: 'stage-4',
@@ -121,6 +128,8 @@ const STAGES = [
     tip: '換気と除湿で奴らの王国を崩壊させろ。',
     stageType: 'saber',
     instructions: '接近してくるゴキブリが斬撃範囲に入った瞬間にライトセーバーを振り下ろせ。タイミングが命だ。',
+    roachImage: wamonImage,
+    roachAlt: 'ワモンゴキブリのターゲット',
   },
 ];
 
