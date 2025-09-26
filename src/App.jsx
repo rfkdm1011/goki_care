@@ -68,6 +68,8 @@ const STAGES = [
       '卵鞘を抱えて歩き回るため、見つけたら即座に駆逐するのが鉄則。',
     ],
     tip: '換気扇とシンクの隙間を徹底的に封鎖しよう。',
+    stageType: 'flash',
+    instructions: '一瞬だけ現れるターゲットを即座に見極め、ゴキブリだけをタップせよ。デコイに触れたらライフを失う。',
   },
   {
     id: 'stage-2',
@@ -82,6 +84,8 @@ const STAGES = [
       '湿った落ち葉や排水口の周りが前線基地。',
     ],
     tip: '玄関マットと落ち葉を掃除して侵入経路を断とう。',
+    stageType: 'shooter',
+    instructions: '画面をタップしてレーザーを発射。降下してくるゴキブリを逃さず撃ち落とせ。',
   },
   {
     id: 'stage-3',
@@ -96,6 +100,8 @@ const STAGES = [
       '繁殖力が高く、1匹見たら巣が近いと疑え。',
     ],
     tip: '排水溝ネットと生ゴミ管理で補給路を断つ。',
+    stageType: 'classic',
+    instructions: '画面を横切るターゲットからゴキブリだけをタップで駆逐。誤射に注意。',
   },
   {
     id: 'stage-4',
@@ -110,6 +116,8 @@ const STAGES = [
       '湿度80%以上を好む。空調を弱めると一気に勢力図を塗り替える。',
     ],
     tip: '換気と除湿で奴らの王国を崩壊させろ。',
+    stageType: 'saber',
+    instructions: '接近してくるゴキブリが斬撃範囲に入った瞬間にライトセーバーを振り下ろせ。タイミングが命だ。',
   },
 ];
 
@@ -222,7 +230,7 @@ function DecoyGraphic({ variant }) {
   }
 }
 
-function FloatingObject({ object, difficulty, onTap, reduceMotion }) {
+function ClassicFloatingObject({ object, difficulty, onTap, reduceMotion }) {
   const objectStyle = {
     top: `${object.top}%`,
     animationDuration: `${object.duration}ms`,
@@ -259,6 +267,512 @@ function FloatingObject({ object, difficulty, onTap, reduceMotion }) {
       </button>
     </div>
   );
+}
+
+function FlashStage({ difficulty, difficultyConfig, roachRatio, onSuccess, onMistake, shouldReduceMotion }) {
+  const [objects, setObjects] = useState([]);
+  const timersRef = useRef([]);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    setObjects([]);
+
+    if (!difficultyConfig) {
+      return () => {};
+    }
+
+    const appearanceDuration = Math.max(Math.min(difficultyConfig.spawnInterval * 0.6, 900), 420);
+    const spawn = () => {
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const isRoach = Math.random() < roachRatio;
+      const variantPool = difficultyConfig.decoys ?? [];
+      const variant = variantPool.length > 0 ? variantPool[randomBetween(0, variantPool.length - 1)] : 'badge';
+      const top = randomBetween(18, 82);
+      const left = randomBetween(18, 82);
+      const scale = Math.random() * 0.4 + 0.8;
+
+      const newObject = { id, isRoach, variant, top, left, scale, appearanceDuration };
+      setObjects((prev) => [...prev, newObject]);
+
+      const timeout = setTimeout(() => {
+        setObjects((prev) => prev.filter((item) => item.id !== id));
+      }, appearanceDuration);
+      timersRef.current.push(timeout);
+    };
+
+    spawn();
+    intervalRef.current = setInterval(spawn, difficultyConfig.spawnInterval);
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [difficultyConfig, roachRatio]);
+
+  const handleTap = (object) => {
+    setObjects((prev) => prev.filter((item) => item.id !== object.id));
+    if (object.isRoach) {
+      onSuccess(1);
+    } else {
+      onMistake();
+    }
+  };
+
+  if (!difficultyConfig) {
+    return null;
+  }
+
+  return (
+    <div className="stage-flash">
+      {objects.length === 0 && (
+        <div className="stage-placeholder">ズミンゴが敵影を探知中…</div>
+      )}
+      {objects.map((object) => {
+        const className = [
+          'flash-target',
+          shouldReduceMotion ? 'reduce-motion' : null,
+        ]
+          .filter(Boolean)
+          .join(' ');
+        const style = {
+          top: `${object.top}%`,
+          left: `${object.left}%`,
+          animationDuration: `${object.appearanceDuration}ms`,
+          transform: `translate(-50%, -50%) scale(${object.scale})`,
+        };
+        if (shouldReduceMotion) {
+          style.animation = 'none';
+          style.opacity = 1;
+        }
+
+        return (
+          <button
+            key={object.id}
+            type="button"
+            className={className}
+            style={style}
+            onClick={() => handleTap(object)}
+          >
+            {object.isRoach ? (
+              <RoachGraphic difficulty={difficulty} />
+            ) : (
+              <DecoyGraphic variant={object.variant} />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ShooterStage({ difficulty, difficultyConfig, onSuccess, onMistake, shouldReduceMotion }) {
+  const [roaches, setRoaches] = useState([]);
+  const [lasers, setLasers] = useState([]);
+  const roachTimeoutsRef = useRef(new Map());
+  const spawnIntervalRef = useRef(null);
+
+  useEffect(() => {
+    roachTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+    roachTimeoutsRef.current.clear();
+    if (spawnIntervalRef.current) {
+      clearInterval(spawnIntervalRef.current);
+      spawnIntervalRef.current = null;
+    }
+    setRoaches([]);
+
+    if (!difficultyConfig) {
+      return () => {};
+    }
+
+    const spawn = () => {
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const x = randomBetween(12, 88);
+      const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
+      const roach = { id, x, duration };
+      setRoaches((prev) => [...prev, roach]);
+
+      const timeout = setTimeout(() => {
+        setRoaches((prev) => prev.filter((item) => item.id !== id));
+        onMistake();
+      }, duration);
+      roachTimeoutsRef.current.set(id, timeout);
+    };
+
+    spawn();
+    spawnIntervalRef.current = setInterval(spawn, difficultyConfig.spawnInterval);
+
+    return () => {
+      roachTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+      roachTimeoutsRef.current.clear();
+      if (spawnIntervalRef.current) {
+        clearInterval(spawnIntervalRef.current);
+        spawnIntervalRef.current = null;
+      }
+    };
+  }, [difficultyConfig, onMistake]);
+
+  const fireLaser = (xPercent) => {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const laser = { id, x: xPercent };
+    setLasers((prev) => [...prev, laser]);
+    setTimeout(() => {
+      setLasers((prev) => prev.filter((item) => item.id !== id));
+    }, 500);
+
+    setRoaches((prev) => {
+      const survivors = [];
+      let defeated = 0;
+      prev.forEach((roach) => {
+        const withinRange = Math.abs(roach.x - xPercent) <= 10;
+        if (withinRange) {
+          defeated += 1;
+          const timeoutId = roachTimeoutsRef.current.get(roach.id);
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            roachTimeoutsRef.current.delete(roach.id);
+          }
+        } else {
+          survivors.push(roach);
+        }
+      });
+
+      if (defeated > 0) {
+        onSuccess(defeated);
+      }
+
+      return survivors;
+    });
+  };
+
+  const handleAreaTap = (event) => {
+    if (!difficultyConfig) {
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const xPercent = ((event.clientX - rect.left) / rect.width) * 100;
+    fireLaser(xPercent);
+  };
+
+  if (!difficultyConfig) {
+    return null;
+  }
+
+  return (
+    <div className="stage-shooter" onClick={handleAreaTap} role="presentation">
+      <div className="shooter-sky" />
+      {roaches.length === 0 && (
+        <div className="stage-placeholder">ズミンゴが照準を合わせている…</div>
+      )}
+      {roaches.map((roach) => {
+        const style = {
+          left: `${roach.x}%`,
+          animationDuration: `${roach.duration}ms`,
+        };
+        if (shouldReduceMotion) {
+          style.animation = 'none';
+          style.top = '30%';
+        }
+        const className = [
+          'shooter-roach',
+          shouldReduceMotion ? 'reduce-motion' : null,
+        ]
+          .filter(Boolean)
+          .join(' ');
+        return (
+          <div key={roach.id} className={className} style={style}>
+            <RoachGraphic difficulty={difficulty} />
+          </div>
+        );
+      })}
+      {lasers.map((laser) => (
+        <div key={laser.id} className="laser-beam" style={{ left: `${laser.x}%` }} />
+      ))}
+      <div className="shooter-ship" />
+    </div>
+  );
+}
+
+function ClassicStage({ difficulty, difficultyConfig, roachRatio, onSuccess, onMistake, shouldReduceMotion }) {
+  const [objects, setObjects] = useState([]);
+  const timersRef = useRef([]);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    setObjects([]);
+
+    if (!difficultyConfig) {
+      return () => {};
+    }
+
+    const spawn = () => {
+      const [minSpawn, maxSpawn] = difficultyConfig.spawnCountRange ?? [1, 1];
+      const spawnCount = randomBetween(minSpawn, maxSpawn);
+      const variantPool = difficultyConfig.decoys ?? [];
+
+      for (let index = 0; index < spawnCount; index += 1) {
+        const id = `${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`;
+        const isRoach = Math.random() < roachRatio;
+        const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
+        const top = randomBetween(8, 80);
+        const scale = Math.random() * 0.4 + 0.8;
+        const variant = variantPool.length > 0 ? variantPool[randomBetween(0, variantPool.length - 1)] : 'badge';
+        const staticLeft = randomBetween(12, 88);
+        const direction = Math.random() < 0.5 ? 'left' : 'right';
+        const newObject = { id, isRoach, duration, top, scale, variant, staticLeft, direction };
+        setObjects((prev) => [...prev, newObject]);
+        const timeout = setTimeout(() => {
+          setObjects((prev) => prev.filter((item) => item.id !== id));
+        }, duration);
+        timersRef.current.push(timeout);
+      }
+    };
+
+    spawn();
+    intervalRef.current = setInterval(spawn, difficultyConfig.spawnInterval);
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [difficultyConfig, roachRatio]);
+
+  const handleObjectTap = (object) => {
+    setObjects((prev) => prev.filter((item) => item.id !== object.id));
+    if (object.isRoach) {
+      onSuccess(1);
+    } else {
+      onMistake();
+    }
+  };
+
+  if (!difficultyConfig) {
+    return null;
+  }
+
+  return (
+    <>
+      {objects.map((object) => (
+        <ClassicFloatingObject
+          key={object.id}
+          object={object}
+          difficulty={difficulty}
+          onTap={handleObjectTap}
+          reduceMotion={shouldReduceMotion}
+        />
+      ))}
+      {objects.length === 0 && <div className="stage-placeholder">ズミンゴが敵の気配を探知中…</div>}
+    </>
+  );
+}
+
+function SaberStage({ difficulty, difficultyConfig, onSuccess, onMistake, shouldReduceMotion }) {
+  const [enemies, setEnemies] = useState([]);
+  const [slashes, setSlashes] = useState([]);
+  const timeoutsRef = useRef(new Map());
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    timeoutsRef.current.forEach((timeouts) => {
+      timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+    });
+    timeoutsRef.current.clear();
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setEnemies([]);
+
+    if (!difficultyConfig) {
+      return () => {};
+    }
+
+    const spawn = () => {
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const x = randomBetween(32, 68);
+      const duration = randomBetween(
+        Math.max(difficultyConfig.speedRange[0], 1600),
+        Math.max(difficultyConfig.speedRange[1], 2200),
+      );
+      const strikeStart = duration * 0.55;
+      const strikeEnd = duration * 0.72;
+      const enemy = { id, x, duration, status: 'approach', strikeStart, strikeEnd };
+      setEnemies((prev) => [...prev, enemy]);
+
+      const readyTimeout = setTimeout(() => {
+        setEnemies((prev) =>
+          prev.map((item) => (item.id === id ? { ...item, status: 'strike' } : item)),
+        );
+      }, strikeStart);
+      const failTimeout = setTimeout(() => {
+        setEnemies((prev) => prev.filter((item) => item.id !== id));
+        timeoutsRef.current.delete(id);
+        onMistake();
+      }, strikeEnd);
+      const cleanupTimeout = setTimeout(() => {
+        setEnemies((prev) => prev.filter((item) => item.id !== id));
+        timeoutsRef.current.delete(id);
+      }, duration);
+
+      timeoutsRef.current.set(id, [readyTimeout, failTimeout, cleanupTimeout]);
+    };
+
+    spawn();
+    intervalRef.current = setInterval(spawn, Math.max(difficultyConfig.spawnInterval, 900));
+
+    return () => {
+      timeoutsRef.current.forEach((timeouts) => {
+        timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+      });
+      timeoutsRef.current.clear();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [difficultyConfig, onMistake]);
+
+  const registerSlash = () => {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setSlashes((prev) => [...prev, id]);
+    setTimeout(() => {
+      setSlashes((prev) => prev.filter((slashId) => slashId !== id));
+    }, 350);
+  };
+
+  const handleStrike = () => {
+    registerSlash();
+    setEnemies((prev) => {
+      const readyEnemy = prev.find((enemy) => enemy.status === 'strike');
+      if (!readyEnemy) {
+        onMistake();
+        return prev;
+      }
+
+      const timeouts = timeoutsRef.current.get(readyEnemy.id);
+      if (timeouts) {
+        timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+        timeoutsRef.current.delete(readyEnemy.id);
+      }
+
+      onSuccess(1);
+      return prev.filter((enemy) => enemy.id !== readyEnemy.id);
+    });
+  };
+
+  if (!difficultyConfig) {
+    return null;
+  }
+
+  return (
+    <div className="stage-saber" onClick={handleStrike} role="presentation">
+      {enemies.length === 0 && <div className="stage-placeholder">気配を研ぎ澄ませ…</div>}
+      {enemies.map((enemy) => {
+        const className = [
+          'saber-enemy',
+          enemy.status === 'strike' ? 'strike-ready' : null,
+          shouldReduceMotion ? 'reduce-motion' : null,
+        ]
+          .filter(Boolean)
+          .join(' ');
+        const style = {
+          left: `${enemy.x}%`,
+          animationDuration: `${enemy.duration}ms`,
+        };
+        if (shouldReduceMotion) {
+          style.animation = 'none';
+          style.transform = 'translate(-50%, -50%) scale(1)';
+        }
+        return (
+          <div key={enemy.id} className={className} style={style}>
+            <RoachGraphic difficulty={difficulty} />
+          </div>
+        );
+      })}
+      {slashes.map((id) => (
+        <div key={id} className="saber-slash" />
+      ))}
+      <div className="saber-hilt" />
+    </div>
+  );
+}
+
+function StagePlayArea({
+  stage,
+  difficulty,
+  difficultyConfig,
+  roachRatio,
+  onSuccess,
+  onMistake,
+  shouldReduceMotion,
+}) {
+  if (!difficultyConfig) {
+    return <div className="stage-placeholder">難易度設定を読み込み中…</div>;
+  }
+
+  switch (stage.stageType) {
+    case 'flash':
+      return (
+        <FlashStage
+          difficulty={difficulty}
+          difficultyConfig={difficultyConfig}
+          roachRatio={roachRatio}
+          onSuccess={onSuccess}
+          onMistake={onMistake}
+          shouldReduceMotion={shouldReduceMotion}
+        />
+      );
+    case 'shooter':
+      return (
+        <ShooterStage
+          difficulty={difficulty}
+          difficultyConfig={difficultyConfig}
+          onSuccess={onSuccess}
+          onMistake={onMistake}
+          shouldReduceMotion={shouldReduceMotion}
+        />
+      );
+    case 'classic':
+      return (
+        <ClassicStage
+          difficulty={difficulty}
+          difficultyConfig={difficultyConfig}
+          roachRatio={roachRatio}
+          onSuccess={onSuccess}
+          onMistake={onMistake}
+          shouldReduceMotion={shouldReduceMotion}
+        />
+      );
+    case 'saber':
+      return (
+        <SaberStage
+          difficulty={difficulty}
+          difficultyConfig={difficultyConfig}
+          onSuccess={onSuccess}
+          onMistake={onMistake}
+          shouldReduceMotion={shouldReduceMotion}
+        />
+      );
+    default:
+      return <div className="stage-placeholder">未定義のステージです。</div>;
+  }
 }
 
 function StageIntro({ stage, killTarget, onStart }) {
@@ -440,12 +954,9 @@ export default function App() {
   const [stageIndex, setStageIndex] = useState(0);
   const [killCount, setKillCount] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
-  const [activeObjects, setActiveObjects] = useState([]);
   const [motionOverride, setMotionOverride] = useState(null);
 
   const prefersReducedMotion = usePrefersReducedMotion();
-  const timersRef = useRef([]);
-  const intervalRef = useRef(null);
 
   const stage = useMemo(() => STAGES[stageIndex], [stageIndex]);
   const isLastStage = stageIndex === STAGES.length - 1;
@@ -467,15 +978,6 @@ export default function App() {
   }`;
 
   useEffect(() => {
-    return () => {
-      timersRef.current.forEach(clearTimeout);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     if (typeof document === 'undefined') {
       return undefined;
     }
@@ -493,55 +995,6 @@ export default function App() {
     };
   }, [isMotionManuallyEnabled]);
 
-  useEffect(() => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setActiveObjects([]);
-
-    if (phase !== 'play' || !difficultyConfig) {
-      return undefined;
-    }
-
-    const spawn = () => {
-      const [minSpawn, maxSpawn] = difficultyConfig.spawnCountRange ?? [1, 1];
-      const spawnCount = randomBetween(minSpawn, maxSpawn);
-      const variantPool = difficultyConfig.decoys;
-
-      for (let index = 0; index < spawnCount; index += 1) {
-        const id = `${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`;
-        const isRoach = Math.random() < stageAdjustedRoachRatio;
-        const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
-        const top = randomBetween(8, 80);
-        const scale = Math.random() * 0.4 + 0.8;
-        const variant = variantPool[randomBetween(0, variantPool.length - 1)];
-        const staticLeft = randomBetween(12, 88);
-        const direction = Math.random() < 0.5 ? 'left' : 'right';
-        const newObject = { id, isRoach, duration, top, scale, variant, staticLeft, direction };
-        setActiveObjects((prev) => [...prev, newObject]);
-        const timeout = setTimeout(() => {
-          setActiveObjects((prev) => prev.filter((item) => item.id !== id));
-        }, duration);
-        timersRef.current.push(timeout);
-      }
-    };
-
-    spawn();
-    intervalRef.current = setInterval(spawn, difficultyConfig.spawnInterval);
-
-    return () => {
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [phase, difficultyConfig, stageIndex]);
-
   const handleSelectDifficulty = (key) => {
     setDifficulty(key);
     setPhase('intro');
@@ -556,26 +1009,24 @@ export default function App() {
     setPhase('play');
   };
 
-  const handleObjectTap = (object) => {
-    setActiveObjects((prev) => prev.filter((item) => item.id !== object.id));
+  const handleSuccessfulHit = (count = 1) => {
+    setKillCount((prev) => {
+      const next = prev + count;
+      if (next >= killTarget) {
+        setPhase('stageClear');
+      }
+      return next;
+    });
+  };
 
-    if (object.isRoach) {
-      setKillCount((prev) => {
-        const next = prev + 1;
-        if (next >= killTarget) {
-          setPhase('stageClear');
-        }
-        return next;
-      });
-    } else {
-      setLives((prev) => {
-        const next = prev - 1;
-        if (next <= 0) {
-          setPhase('defeat');
-        }
-        return Math.max(next, 0);
-      });
-    }
+  const handleMistake = () => {
+    setLives((prev) => {
+      const next = prev - 1;
+      if (next <= 0) {
+        setPhase('defeat');
+      }
+      return Math.max(next, 0);
+    });
   };
 
   const handleNextStage = () => {
@@ -693,29 +1144,23 @@ export default function App() {
                   ))}
                 </div>
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-emerald-100/70">
-                ゴキブリだけをタップして駆逐。誤射はライフを失う。画面を横切る物体を見極めろ！
-              </p>
+              <p className="mt-2 text-[11px] leading-relaxed text-emerald-100/70">{stage.instructions}</p>
             </div>
 
             <div className="relative h-[320px] w-full overflow-hidden rounded-[32px] border border-emerald-200/40 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-inner shadow-black/60">
               <div className="absolute inset-x-0 top-3 flex justify-center text-[11px] font-semibold uppercase tracking-[0.4em] text-emerald-200/70">
                 TARGET: {stage.species}
               </div>
-              {activeObjects.map((object) => (
-                <FloatingObject
-                  key={object.id}
-                  object={object}
-                  difficulty={difficulty}
-                  onTap={handleObjectTap}
-                  reduceMotion={shouldReduceMotion}
-                />
-              ))}
-              {activeObjects.length === 0 && (
-                <div className="flex h-full items-center justify-center text-sm text-emerald-100/50">
-                  ズミンゴが敵の気配を探知中…
-                </div>
-              )}
+              <StagePlayArea
+                key={`${stage.id}-${difficulty}`}
+                stage={stage}
+                difficulty={difficulty}
+                difficultyConfig={difficultyConfig}
+                roachRatio={stageAdjustedRoachRatio}
+                onSuccess={handleSuccessfulHit}
+                onMistake={handleMistake}
+                shouldReduceMotion={shouldReduceMotion}
+              />
             </div>
           </section>
         )}
