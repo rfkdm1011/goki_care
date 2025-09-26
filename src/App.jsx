@@ -31,7 +31,7 @@ const DIFFICULTIES = {
   },
   hard: {
     label: 'Hard',
-    description: 'ちみはこの光沢にひれ伏す事となる',
+    description: 'ちみはこの光沢にひれ伏す事となる。',
     roachRatio: 0.75,
     spawnInterval: 800,
     speedRange: [1500, 2200],
@@ -55,7 +55,7 @@ const STAGES = [
   {
     id: 'stage-1',
     order: 1,
-    species: 'チャバネG',
+    species: 'チャバネゴキブリ',
     codename: 'Amber Runner',
     intro:
       '飲食店やキッチンに潜む小型の侵略者。素早い繁殖力で銀河の補給ラインを汚染する。',
@@ -66,17 +66,17 @@ const STAGES = [
     ],
     tip: '換気扇とシンクの隙間を徹底的に封鎖しよう。',
     stageType: 'flash',
-    instructions: '一瞬だけ現れるターゲットを即座に見極め、Gだけをタップせよ。デコイに触れたらライフを失う。',
+    instructions: '一瞬だけ現れるターゲットを即座に見極め、Gだけをタップせよ。Gでは無いものに触れたらライフを失う。',
     roachImage: chabaneImage,
-    roachAlt: 'チャバネGのターゲット',
+    roachAlt: 'チャバゴキブリのターゲット',
   },
   {
     id: 'stage-2',
     order: 2,
-    species: 'ヤマトG',
+    species: 'ヤマトゴキブリ',
     codename: 'Forest Raider',
     intro:
-      '日本原産の黒褐色の兵。屋外から家庭へ攻め込むタフなフィジカルを誇る。',
+      '日本原産の黒褐色の兵。ちっちゃGを見つけたら多分こいつ。',
     facts: [
       '体長は25〜35mm。オスは長い翅で滑空する。',
       '寒さにも比較的強く、玄関やベランダから侵入してくる。',
@@ -87,15 +87,15 @@ const STAGES = [
     instructions:
       '画面をタップしてレーザーを発射。複数で迫るGは撃墜していない限り進行し続ける。こちらの陣地に侵入される前に全て撃ち落とせ。',
     roachImage: yamatoImage,
-    roachAlt: 'ヤマトGのターゲット',
+    roachAlt: 'ヤマトゴキブリのターゲット',
   },
   {
     id: 'stage-3',
     order: 3,
-    species: 'クロG',
+    species: 'クロゴキブリ',
     codename: 'Shadow Stalker',
     intro:
-      '大型で漆黒。都会のダクトを滑る暗殺者。火力の高いズミーでも一撃必殺が求められる。',
+      '漆黒の悪魔。掃除機で吸って掃除機ごと捨てる羽目になる。',
     facts: [
       '体長は30〜40mm。厚みのある光沢ボディで存在感抜群。',
       '夜行性で、冷蔵庫裏や排水管の周辺に潜む。',
@@ -105,15 +105,15 @@ const STAGES = [
     stageType: 'classic',
     instructions: '画面を横切るターゲットからGだけをタップで駆逐。誤射に注意。',
     roachImage: kuroImage,
-    roachAlt: 'クロGのターゲット',
+    roachAlt: 'クロゴキブリのターゲット',
   },
   {
     id: 'stage-4',
     order: 4,
-    species: 'ワモンG',
+    species: 'ワモンゴキブリ',
     codename: 'Ring Emperor',
     intro:
-      '胸部の輪模様が帝王の証。暖かい地域で勢力を拡大する巨大種。',
+      'G界の帝王。防御力0のズミーにはなす術なし。',
     facts: [
       '体長は35〜45mm。赤みのある茶色とリング模様が特徴。',
       '水回りから天井まで自在に移動し、飛翔力も高い。',
@@ -123,7 +123,7 @@ const STAGES = [
     stageType: 'saber',
     instructions: '接近してくるGが斬撃範囲に入った瞬間にライトセーバーを振り下ろせ。タイミングが命だ。',
     roachImage: wamonImage,
-    roachAlt: 'ワモンGのターゲット',
+    roachAlt: 'ワモンゴキブリのターゲット',
   },
 ];
 
@@ -959,7 +959,7 @@ function DifficultySelect({ onSelect }) {
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/40 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">作戦難易度を選択</p>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
-        タップでGだけを駆逐せよ。難易度ごとに設定された撃破数を達成すればステージクリア。
+        Gを駆逐せよ。難易度ごとに設定された撃破数を達成すればステージクリア。
         誤射はライフを奪い、3回ミスすると作戦は失敗となる。
       </p>
       <div className="mt-6 grid gap-4">
@@ -1107,7 +1107,7 @@ export default function App() {
             className="mx-auto h-32 w-auto shadow-lg shadow-emerald-900/40"
           />
           <p className="text-xs text-emerald-100/80">
-            この世に蔓延るGを一匹残らず駆逐するため、ジェダイの騎士ズミーが立ち上がる。対象だけをタップして銀河を守れ！
+            この世に蔓延るGを一匹残らず駆逐するため、ジェダイの騎士ズミーが立ち上がる。フォースの力で銀河を守れ！
           </p>
         </header>
 
@@ -1151,7 +1151,7 @@ export default function App() {
               <div className="mt-4 rounded-2xl border border-emerald-200/30 bg-emerald-500/10 px-4 py-3 text-[11px] text-emerald-100/80">
                 <p className="font-semibold text-emerald-200">アニメーションを手動で有効化中</p>
                 <p className="mt-1 leading-relaxed">
-                  端末設定に関係なく演出を表示しています。簡略表示に戻す場合は下のボタンを選んでください。
+                  簡略表示に戻す場合は下のボタン
                 </p>
                 <button
                   type="button"
