@@ -814,7 +814,7 @@ function StageIntro({ stage, killTarget, onStart }) {
       <p className="text-sm font-semibold text-emerald-200">ステージ{stage.order}</p>
       <h2 className="mt-1 text-2xl font-black text-white">
         {stage.species}
-        <span className="ml-2 text-sm font-medium text-emerald-200">（コードネーム: {stage.codename}）</span>
+        <span className="ml-2 text-sm font-medium text-emerald-200"></span>
       </h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">{stage.intro}</p>
       <ul className="mt-4 space-y-2 text-xs leading-relaxed text-emerald-100/80">
