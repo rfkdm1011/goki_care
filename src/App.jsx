@@ -214,6 +214,22 @@ function RoachGraphic({ difficulty }) {
   }
 }
 
+function StageRoach({ stage, difficulty }) {
+  if (stage?.roachImage) {
+    return (
+      <div className="roach-graphic">
+        <img
+          src={stage.roachImage}
+          alt={stage.roachAlt ?? `${stage.species}のターゲット`}
+          className="roach-image"
+        />
+      </div>
+    );
+  }
+
+  return <RoachGraphic difficulty={difficulty} />;
+}
+
 function DecoyGraphic({ variant }) {
   switch (variant) {
     case 'badge':
@@ -242,7 +258,7 @@ function DecoyGraphic({ variant }) {
   }
 }
 
-function ClassicFloatingObject({ object, difficulty, onTap, reduceMotion }) {
+function ClassicFloatingObject({ stage, object, difficulty, onTap, reduceMotion }) {
   const objectStyle = {
     top: `${object.top}%`,
     animationDuration: `${object.duration}ms`,
@@ -275,7 +291,11 @@ function ClassicFloatingObject({ object, difficulty, onTap, reduceMotion }) {
         onClick={() => onTap(object)}
         style={{ transform: `scale(${object.scale})` }}
       >
-        {object.isRoach ? <RoachGraphic difficulty={difficulty} /> : <DecoyGraphic variant={object.variant} />}
+        {object.isRoach ? (
+          <StageRoach stage={stage} difficulty={difficulty} />
+        ) : (
+          <DecoyGraphic variant={object.variant} />
+        )}
       </button>
     </div>
   );
@@ -375,15 +395,7 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
             onClick={() => handleTap(object)}
           >
             {object.isRoach ? (
-              stage?.roachImage ? (
-                <img
-                  src={stage.roachImage}
-                  alt={stage.roachAlt ?? `${stage.species}のターゲット`}
-                  className="roach-image"
-                />
-              ) : (
-                <RoachGraphic difficulty={difficulty} />
-              )
+              <StageRoach stage={stage} difficulty={difficulty} />
             ) : (
               <DecoyGraphic variant={object.variant} />
             )}
@@ -394,7 +406,7 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
   );
 }
 
-function ShooterStage({ difficulty, difficultyConfig, onSuccess, onMistake, shouldReduceMotion }) {
+function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistake, shouldReduceMotion }) {
   const [roaches, setRoaches] = useState([]);
   const [lasers, setLasers] = useState([]);
   const roachTimeoutsRef = useRef(new Map());
@@ -509,7 +521,7 @@ function ShooterStage({ difficulty, difficultyConfig, onSuccess, onMistake, shou
           .join(' ');
         return (
           <div key={roach.id} className={className} style={style}>
-            <RoachGraphic difficulty={difficulty} />
+            <StageRoach stage={stage} difficulty={difficulty} />
           </div>
         );
       })}
@@ -521,7 +533,7 @@ function ShooterStage({ difficulty, difficultyConfig, onSuccess, onMistake, shou
   );
 }
 
-function ClassicStage({ difficulty, difficultyConfig, roachRatio, onSuccess, onMistake, shouldReduceMotion }) {
+function ClassicStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess, onMistake, shouldReduceMotion }) {
   const [objects, setObjects] = useState([]);
   const timersRef = useRef([]);
   const intervalRef = useRef(null);
@@ -592,6 +604,7 @@ function ClassicStage({ difficulty, difficultyConfig, roachRatio, onSuccess, onM
       {objects.map((object) => (
         <ClassicFloatingObject
           key={object.id}
+          stage={stage}
           object={object}
           difficulty={difficulty}
           onTap={handleObjectTap}
@@ -603,7 +616,7 @@ function ClassicStage({ difficulty, difficultyConfig, roachRatio, onSuccess, onM
   );
 }
 
-function SaberStage({ difficulty, difficultyConfig, onSuccess, onMistake, shouldReduceMotion }) {
+function SaberStage({ stage, difficulty, difficultyConfig, onSuccess, onMistake, shouldReduceMotion }) {
   const [enemies, setEnemies] = useState([]);
   const [slashes, setSlashes] = useState([]);
   const timeoutsRef = useRef(new Map());
@@ -722,7 +735,7 @@ function SaberStage({ difficulty, difficultyConfig, onSuccess, onMistake, should
         }
         return (
           <div key={enemy.id} className={className} style={style}>
-            <RoachGraphic difficulty={difficulty} />
+            <StageRoach stage={stage} difficulty={difficulty} />
           </div>
         );
       })}
@@ -763,6 +776,7 @@ function StagePlayArea({
     case 'shooter':
       return (
         <ShooterStage
+          stage={stage}
           difficulty={difficulty}
           difficultyConfig={difficultyConfig}
           onSuccess={onSuccess}
@@ -773,6 +787,7 @@ function StagePlayArea({
     case 'classic':
       return (
         <ClassicStage
+          stage={stage}
           difficulty={difficulty}
           difficultyConfig={difficultyConfig}
           roachRatio={roachRatio}
@@ -784,6 +799,7 @@ function StagePlayArea({
     case 'saber':
       return (
         <SaberStage
+          stage={stage}
           difficulty={difficulty}
           difficultyConfig={difficultyConfig}
           onSuccess={onSuccess}
