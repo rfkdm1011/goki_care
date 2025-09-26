@@ -11,8 +11,7 @@ const DEFAULT_KILL_TARGET = 10;
 const DIFFICULTIES = {
   easy: {
     label: 'Easy',
-    title: 'EASY モード',
-    description: 'ズミンゴ初陣。デフォルメされた愛嬌たっぷりのゴキのみ登場。',
+    description: 'ズミー初陣。デフォルメされた愛嬌たっぷりのゴキのみ登場。',
     roachRatio: 0.55,
     spawnInterval: 1400,
     speedRange: [4200, 5600],
@@ -23,7 +22,6 @@ const DIFFICULTIES = {
   },
   normal: {
     label: 'Normal',
-    title: 'NORMAL モード',
     description: 'リアルに近いシルエットが登場。油断すると見逃すぞ。',
     roachRatio: 0.65,
     spawnInterval: 1100,
@@ -31,11 +29,10 @@ const DIFFICULTIES = {
     spawnCountRange: [2, 3],
     killTarget: 20,
     decoys: ['badge', 'light', 'capsule'],
-    flavor: 'ズミンゴの正確なタップが求められる銀河標準訓練。',
+    flavor: 'ズミーの正確なタップが求められる銀河標準訓練。',
   },
   hard: {
     label: 'Hard',
-    title: 'HARD モード',
     description: '動きが速く、光沢のあるリアルなボディが迫ってくる。',
     roachRatio: 0.75,
     spawnInterval: 800,
@@ -43,11 +40,10 @@ const DIFFICULTIES = {
     spawnCountRange: [3, 4],
     killTarget: 50,
     decoys: ['light', 'capsule', 'drone'],
-    flavor: '一瞬の迷いが命取り。歴戦のズミンゴだけが耐えられる。',
+    flavor: '一瞬の迷いが命取り。歴戦のズミーだけが耐えられる。',
   },
   inferno: {
     label: '地獄モード',
-    title: '地獄モード',
     description: '地獄から這い出た禍々しいシルエット。動きもスピードも桁違い。',
     roachRatio: 0.50,
     spawnInterval: 300,
@@ -55,7 +51,7 @@ const DIFFICULTIES = {
     spawnCountRange: [4, 5],
     killTarget: 100,
     decoys: ['capsule', 'drone', 'spark'],
-    flavor: 'ズミンゴ伝説の最終訓練。精神力も試される最恐の戦場。',
+    flavor: 'ズミー伝説の最終訓練。精神力も試される最恐の戦場。',
   },
 };
 
@@ -63,7 +59,7 @@ const STAGES = [
   {
     id: 'stage-1',
     order: 1,
-    species: 'チャバネゴキブリ',
+    species: 'チャバネG',
     codename: 'Amber Runner',
     intro:
       '飲食店やキッチンに潜む小型の侵略者。素早い繁殖力で銀河の補給ラインを汚染する。',
@@ -74,14 +70,14 @@ const STAGES = [
     ],
     tip: '換気扇とシンクの隙間を徹底的に封鎖しよう。',
     stageType: 'flash',
-    instructions: '一瞬だけ現れるターゲットを即座に見極め、ゴキブリだけをタップせよ。デコイに触れたらライフを失う。',
+    instructions: '一瞬だけ現れるターゲットを即座に見極め、Gだけをタップせよ。デコイに触れたらライフを失う。',
     roachImage: chabaneImage,
-    roachAlt: 'チャバネゴキブリのターゲット',
+    roachAlt: 'チャバネGのターゲット',
   },
   {
     id: 'stage-2',
     order: 2,
-    species: 'ヤマトゴキブリ',
+    species: 'ヤマトG',
     codename: 'Forest Raider',
     intro:
       '日本原産の黒褐色の兵。屋外から家庭へ攻め込むタフなフィジカルを誇る。',
@@ -92,17 +88,17 @@ const STAGES = [
     ],
     tip: '玄関マットと落ち葉を掃除して侵入経路を断とう。',
     stageType: 'shooter',
-    instructions: '画面をタップしてレーザーを発射。降下してくるゴキブリを逃さず撃ち落とせ。',
+    instructions: '画面をタップしてレーザーを発射。降下してくるGを逃さず撃ち落とせ。',
     roachImage: yamatoImage,
-    roachAlt: 'ヤマトゴキブリのターゲット',
+    roachAlt: 'ヤマトGのターゲット',
   },
   {
     id: 'stage-3',
     order: 3,
-    species: 'クロゴキブリ',
+    species: 'クロG',
     codename: 'Shadow Stalker',
     intro:
-      '大型で漆黒。都会のダクトを滑る暗殺者。火力の高いズミンゴでも一撃必殺が求められる。',
+      '大型で漆黒。都会のダクトを滑る暗殺者。火力の高いズミーでも一撃必殺が求められる。',
     facts: [
       '体長は30〜40mm。厚みのある光沢ボディで存在感抜群。',
       '夜行性で、冷蔵庫裏や排水管の周辺に潜む。',
@@ -110,14 +106,14 @@ const STAGES = [
     ],
     tip: '排水溝ネットと生ゴミ管理で補給路を断つ。',
     stageType: 'classic',
-    instructions: '画面を横切るターゲットからゴキブリだけをタップで駆逐。誤射に注意。',
+    instructions: '画面を横切るターゲットからGだけをタップで駆逐。誤射に注意。',
     roachImage: kuroImage,
-    roachAlt: 'クロゴキブリのターゲット',
+    roachAlt: 'クロGのターゲット',
   },
   {
     id: 'stage-4',
     order: 4,
-    species: 'ワモンゴキブリ',
+    species: 'ワモンG',
     codename: 'Ring Emperor',
     intro:
       '胸部の輪模様が帝王の証。暖かい地域で勢力を拡大する巨大種。',
@@ -128,9 +124,9 @@ const STAGES = [
     ],
     tip: '換気と除湿で奴らの王国を崩壊させろ。',
     stageType: 'saber',
-    instructions: '接近してくるゴキブリが斬撃範囲に入った瞬間にライトセーバーを振り下ろせ。タイミングが命だ。',
+    instructions: '接近してくるGが斬撃範囲に入った瞬間にライトセーバーを振り下ろせ。タイミングが命だ。',
     roachImage: wamonImage,
-    roachAlt: 'ワモンゴキブリのターゲット',
+    roachAlt: 'ワモンGのターゲット',
   },
 ];
 
@@ -367,7 +363,7 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
   return (
     <div className="stage-flash">
       {objects.length === 0 && (
-        <div className="stage-placeholder">ズミンゴが敵影を探知中…</div>
+        <div className="stage-placeholder">ズミーが敵影を探知中…</div>
       )}
       {objects.map((object) => {
         const className = [
@@ -503,7 +499,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     <div className="stage-shooter" onClick={handleAreaTap} role="presentation">
       <div className="shooter-sky" />
       {roaches.length === 0 && (
-        <div className="stage-placeholder">ズミンゴが照準を合わせている…</div>
+        <div className="stage-placeholder">ズミーが照準を合わせている…</div>
       )}
       {roaches.map((roach) => {
         const style = {
@@ -612,7 +608,7 @@ function ClassicStage({ stage, difficulty, difficultyConfig, roachRatio, onSucce
           reduceMotion={shouldReduceMotion}
         />
       ))}
-      {objects.length === 0 && <div className="stage-placeholder">ズミンゴが敵の気配を探知中…</div>}
+      {objects.length === 0 && <div className="stage-placeholder">ズミーが敵の気配を探知中…</div>}
     </>
   );
 }
@@ -832,7 +828,7 @@ function StageIntro({ stage, killTarget, onStart }) {
       </ul>
       <div className="mt-5 space-y-3">
         <div className="rounded-2xl border border-emerald-400/50 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-100">
-          <span className="font-semibold text-emerald-200">ズミンゴ指令:</span> {stage.tip}
+          <span className="font-semibold text-emerald-200">ズミー指令:</span> {stage.tip}
         </div>
         <div className="rounded-2xl border border-emerald-200/40 bg-slate-900/60 px-4 py-3 text-xs text-emerald-100/80">
           この作戦の撃破目標は <span className="font-semibold text-emerald-200">{killTarget}体</span>。
@@ -853,17 +849,17 @@ function StageIntro({ stage, killTarget, onStart }) {
 function StageClear({ stage, isLastStage, killTarget, onNext, onFinal, onBackToMenu }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/40 backdrop-blur">
-      <p className="text-sm font-semibold text-emerald-200">ズミンゴ勝利</p>
+      <p className="text-sm font-semibold text-emerald-200">ズミー勝利</p>
       <h2 className="mt-1 text-2xl font-black text-white">
         {stage.species}を完全駆逐！
       </h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
-        ズミンゴはターゲットを{killTarget}匹撃破し、{stage.codename} セクターの制圧に成功した。
+        ズミーはターゲットを{killTarget}匹撃破し、{stage.codename} セクターの制圧に成功した。
       </p>
       {isLastStage ? (
         <>
           <p className="mt-4 text-xs text-emerald-100/80">
-            銀河は一時の平和を取り戻した。しかしズミンゴの戦いは終わらない——伝説の報告書を作成しよう。
+            銀河は一時の平和を取り戻した。しかしズミーの戦いは終わらない——伝説の報告書を作成しよう。
           </p>
           <div className="mt-6 grid gap-3">
             <button
@@ -907,7 +903,7 @@ function StageClear({ stage, isLastStage, killTarget, onNext, onFinal, onBackToM
 function DefeatCard({ stage, onRetry, onBackToMenu }) {
   return (
     <section className="rounded-3xl bg-white/4 px-5 py-6 text-white shadow-lg shadow-black/40 backdrop-blur">
-      <p className="text-sm font-semibold text-rose-300">ズミンゴ劣勢</p>
+      <p className="text-sm font-semibold text-rose-300">ズミー劣勢</p>
       <h2 className="mt-1 text-2xl font-black text-white">{stage.species}に押し切られた…</h2>
       <p className="mt-4 text-sm leading-relaxed text-rose-100/80">
         誤射が続きライフが尽きてしまった。呼吸を整え、ターゲットだけを正確に狙おう。
@@ -937,9 +933,9 @@ function FinalReport({ difficulty, onRestart }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/50 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">GOKI WARS 完了報告</p>
-      <h2 className="mt-1 text-3xl font-black text-white">ズミンゴの伝説が更新された！</h2>
+      <h2 className="mt-1 text-3xl font-black text-white">ズミーの伝説が更新された！</h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
-        地獄のゴキブリ軍勢を打ち破り、銀河に平和が戻った。難易度 {config.title} の征伐データはホロレコーダーに記録された。
+        地獄のG軍勢を打ち破り、銀河に平和が戻った。難易度 {config.title} の征伐データはホロレコーダーに記録された。
       </p>
       <p className="mt-4 text-xs text-emerald-100/80">
         さらなる強さを求めるなら別の難易度に挑戦し、新たな敵シルエットに慣れていこう。
@@ -959,9 +955,8 @@ function DifficultySelect({ onSelect }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/40 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">作戦難易度を選択</p>
-      <h2 className="mt-1 text-3xl font-black text-white">GOKI WARS ズミンゴの逆襲</h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
-        タップでゴキブリだけを駆逐せよ。難易度ごとに設定された撃破数を達成すればステージクリア。
+        タップでGだけを駆逐せよ。難易度ごとに設定された撃破数を達成すればステージクリア。
         誤射はライフを奪い、3回ミスすると作戦は失敗となる。
       </p>
       <div className="mt-6 grid gap-4">
@@ -977,7 +972,7 @@ function DifficultySelect({ onSelect }) {
             <p className="mt-2 text-xs text-emerald-100/80">{config.description}</p>
             <p className="mt-3 text-[11px] text-emerald-100/60">{config.flavor}</p>
             <p className="mt-3 text-[11px] text-emerald-100/70">
-              撃破目標: {config.killTarget}体 / 出現数: {config.spawnCountRange ? `${config.spawnCountRange[0]}〜${config.spawnCountRange[1]}` : '1'}体
+              撃破目標: {config.killTarget}
             </p>
           </button>
         ))}
@@ -1108,9 +1103,8 @@ export default function App() {
             alt="GokiCare ロゴ"
             className="mx-auto h-16 w-auto shadow-lg shadow-emerald-900/40"
           />
-          <h1 className="text-3xl font-black text-white sm:text-4xl">Gの逆襲</h1>
           <p className="text-xs text-emerald-100/80">
-            この世に蔓延るゴキブリを一匹残らず駆逐するため、伝説の戦士ズミンゴが立ち上がる。対象だけをタップして銀河を守れ！
+            この世に蔓延るGを一匹残らず駆逐するため、伝説の戦士ズミーが立ち上がる。対象だけをタップして銀河を守れ！
           </p>
         </header>
 
