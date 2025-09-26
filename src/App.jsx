@@ -88,7 +88,8 @@ const STAGES = [
     ],
     tip: '玄関マットと落ち葉を掃除して侵入経路を断とう。',
     stageType: 'shooter',
-    instructions: '画面をタップしてレーザーを発射。降下してくるGを逃さず撃ち落とせ。',
+    instructions:
+      '画面をタップしてレーザーを発射。複数で迫るGは撃墜していない限り進行し続ける。こちらの陣地に侵入される前に全て撃ち落とせ。',
     roachImage: yamatoImage,
     roachAlt: 'ヤマトGのターゲット',
   },
@@ -423,17 +424,23 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     }
 
     const spawn = () => {
-      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const x = randomBetween(12, 88);
-      const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
-      const roach = { id, x, duration };
-      setRoaches((prev) => [...prev, roach]);
+      const [minSpawn, maxSpawn] = difficultyConfig.spawnCountRange ?? [1, 1];
+      const spawnCount = randomBetween(minSpawn, maxSpawn);
 
-      const timeout = setTimeout(() => {
-        setRoaches((prev) => prev.filter((item) => item.id !== id));
-        onMistake();
-      }, duration);
-      roachTimeoutsRef.current.set(id, timeout);
+      for (let index = 0; index < spawnCount; index += 1) {
+        const id = `${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`;
+        const x = randomBetween(12, 88);
+        const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
+        const roach = { id, x, duration };
+        setRoaches((prev) => [...prev, roach]);
+
+        const timeout = setTimeout(() => {
+          setRoaches((prev) => prev.filter((item) => item.id !== id));
+          roachTimeoutsRef.current.delete(id);
+          onMistake();
+        }, duration);
+        roachTimeoutsRef.current.set(id, timeout);
+      }
     };
 
     spawn();
