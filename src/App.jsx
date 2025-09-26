@@ -56,7 +56,6 @@ const STAGES = [
     id: 'stage-1',
     order: 1,
     species: 'チャバネゴキブリ',
-    codename: 'Amber Runner',
     intro:
       '小型の侵略者。ちっちゃGを見つけたら多分こいつ。',
     facts: [
@@ -74,7 +73,6 @@ const STAGES = [
     id: 'stage-2',
     order: 2,
     species: 'ヤマトゴキブリ',
-    codename: 'Forest Raider',
     intro:
       '日本原産の黒褐色の兵。ズミー発狂レベル100',
     facts: [
@@ -93,7 +91,6 @@ const STAGES = [
     id: 'stage-3',
     order: 3,
     species: 'クロゴキブリ',
-    codename: 'Shadow Stalker',
     intro:
       '漆黒の悪魔。掃除機で吸って掃除機ごと捨てる羽目になる。',
     facts: [
@@ -111,7 +108,6 @@ const STAGES = [
     id: 'stage-4',
     order: 4,
     species: 'ワモンゴキブリ',
-    codename: 'Ring Emperor',
     intro:
       'G界の帝王。防御力0のズミーにはなす術なし。',
     facts: [
