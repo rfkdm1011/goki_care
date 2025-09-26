@@ -1101,10 +1101,10 @@ export default function App() {
           <img
             src={logoImage}
             alt="GokiCare ロゴ"
-            className="mx-auto h-16 w-auto shadow-lg shadow-emerald-900/40"
+            className="mx-auto h-32 w-auto shadow-lg shadow-emerald-900/40"
           />
           <p className="text-xs text-emerald-100/80">
-            この世に蔓延るGを一匹残らず駆逐するため、伝説の戦士ズミーが立ち上がる。対象だけをタップして銀河を守れ！
+            この世に蔓延るGを一匹残らず駆逐するため、ジェダイの騎士ズミーが立ち上がる。対象だけをタップして銀河を守れ！
           </p>
         </header>
 
