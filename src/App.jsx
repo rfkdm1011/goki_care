@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import chabaneImage from '../chabane.PNG';
 
 const MAX_LIVES = 3;
 const DEFAULT_KILL_TARGET = 10;
@@ -70,6 +71,8 @@ const STAGES = [
     tip: '換気扇とシンクの隙間を徹底的に封鎖しよう。',
     stageType: 'flash',
     instructions: '一瞬だけ現れるターゲットを即座に見極め、ゴキブリだけをタップせよ。デコイに触れたらライフを失う。',
+    roachImage: chabaneImage,
+    roachAlt: 'チャバネゴキブリのターゲット',
   },
   {
     id: 'stage-2',
@@ -269,7 +272,7 @@ function ClassicFloatingObject({ object, difficulty, onTap, reduceMotion }) {
   );
 }
 
-function FlashStage({ difficulty, difficultyConfig, roachRatio, onSuccess, onMistake, shouldReduceMotion }) {
+function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess, onMistake, shouldReduceMotion }) {
   const [objects, setObjects] = useState([]);
   const timersRef = useRef([]);
   const intervalRef = useRef(null);
@@ -363,7 +366,15 @@ function FlashStage({ difficulty, difficultyConfig, roachRatio, onSuccess, onMis
             onClick={() => handleTap(object)}
           >
             {object.isRoach ? (
-              <RoachGraphic difficulty={difficulty} />
+              stage?.roachImage ? (
+                <img
+                  src={stage.roachImage}
+                  alt={stage.roachAlt ?? `${stage.species}のターゲット`}
+                  className="roach-image"
+                />
+              ) : (
+                <RoachGraphic difficulty={difficulty} />
+              )
             ) : (
               <DecoyGraphic variant={object.variant} />
             )}
@@ -731,6 +742,7 @@ function StagePlayArea({
     case 'flash':
       return (
         <FlashStage
+          stage={stage}
           difficulty={difficulty}
           difficultyConfig={difficultyConfig}
           roachRatio={roachRatio}
