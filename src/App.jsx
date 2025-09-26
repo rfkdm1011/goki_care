@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import chabaneImage from '../chabane.png';
-import yamatoImage from '../yamato.png';
-import kuroImage from '../kuro.png';
-import wamonImage from '../wamon.png';
+import chabaneImage from './assets/chabane.png';
+import yamatoImage from './assets/yamato.png';
+import kuroImage from './assets/kuro.png';
+import wamonImage from './assets/wamon.png';
 
 const MAX_LIVES = 3;
 const DEFAULT_KILL_TARGET = 10;
