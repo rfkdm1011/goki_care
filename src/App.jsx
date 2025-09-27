@@ -1277,7 +1277,7 @@ function StageClear({
             <button
               type="button"
               onClick={onBackToMenu}
-              className="w-full rounded-2xl border border-emerald-300/50 bg-transparent px-6 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-300/10"
+              className="justify-self-end rounded-xl border border-emerald-300/60 bg-transparent px-4 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-300/10"
             >
               難易度選択に戻る
             </button>
@@ -1295,7 +1295,7 @@ function StageClear({
           <button
             type="button"
             onClick={onBackToMenu}
-            className="w-full rounded-2xl border border-emerald-300/50 bg-transparent px-6 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-300/10"
+            className="justify-self-end rounded-xl border border-emerald-300/60 bg-transparent px-4 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-300/10"
           >
             難易度選択に戻る
           </button>
@@ -1324,7 +1324,7 @@ function DefeatCard({ stage, onRetry, onBackToMenu }) {
         <button
           type="button"
           onClick={onBackToMenu}
-          className="w-full rounded-2xl border border-rose-200/50 bg-transparent px-6 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-200/10"
+          className="justify-self-end rounded-xl border border-rose-200/60 bg-transparent px-4 py-2 text-xs font-semibold text-rose-100 transition hover:bg-rose-200/10"
         >
           難易度選択に戻る
         </button>
@@ -1357,7 +1357,7 @@ function InfernoReward({ onViewFinal, onRestart }) {
         <button
           type="button"
           onClick={onRestart}
-          className="w-full rounded-2xl border border-emerald-300/50 bg-transparent px-6 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-300/10"
+          className="justify-self-end rounded-xl border border-emerald-300/60 bg-transparent px-4 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-300/10"
         >
           難易度選択に戻る
         </button>
