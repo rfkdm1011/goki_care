@@ -1228,6 +1228,7 @@ function StageClear({
   onFinal,
   onBackToMenu,
   showSuperRoachMessage = false,
+  difficulty,
 }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/40 backdrop-blur">
@@ -1238,6 +1239,11 @@ function StageClear({
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
         ズミーはターゲットを{killTarget}匹撃破し、{stage.codename} G軍の制圧に成功した。
       </p>
+      {difficulty === 'inferno' && (
+        <p className="mt-4 rounded-2xl border border-emerald-300/60 bg-emerald-500/10 px-4 py-3 text-sm leading-relaxed text-emerald-50">
+          クリア画面のスクショをふくどめ氏に送ろう！豪華景品ゲットのチャンス💎
+        </p>
+      )}
       {showSuperRoachMessage && SUPER_ROACH_STAGE_MESSAGES[stage.order] && (
         <p className="mt-4 rounded-2xl border border-amber-300/60 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-50">
           {SUPER_ROACH_STAGE_MESSAGES[stage.order]}
@@ -1582,6 +1588,11 @@ export default function App() {
                 </div>
               </div>
               <p className="mt-2 text-[11px] leading-relaxed text-emerald-100/70">{stage.instructions}</p>
+              {difficulty === 'inferno' && (
+                <p className="mt-3 rounded-2xl border border-emerald-300/50 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold leading-relaxed text-emerald-50">
+                  地獄モードをクリアしたら豪華景品がもらえるかも！？
+                </p>
+              )}
             </div>
 
             <div className="relative h-[320px] w-full overflow-hidden rounded-[32px] border border-emerald-200/40 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-inner shadow-black/60">
@@ -1611,6 +1622,7 @@ export default function App() {
             onFinal={handleGoToFinalReport}
             onBackToMenu={handleBackToMenu}
             showSuperRoachMessage={defeatedSuperRoachThisStage}
+            difficulty={difficulty}
           />
         )}
 
