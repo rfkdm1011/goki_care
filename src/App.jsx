@@ -998,7 +998,7 @@ function StageClear({
         {stage.species}を完全駆逐！
       </h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
-        ズミーはターゲットを{killTarget}匹撃破し、{stage.codename} セクターの制圧に成功した。
+        ズミーはターゲットを{killTarget}匹撃破し、{stage.codename} G軍の制圧に成功した。
       </p>
       {showSuperRoachMessage && SUPER_ROACH_STAGE_MESSAGES[stage.order] && (
         <p className="mt-4 rounded-2xl border border-amber-300/60 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-50">
@@ -1008,7 +1008,7 @@ function StageClear({
       {isLastStage ? (
         <>
           <p className="mt-4 text-xs text-emerald-100/80">
-            銀河は一時の平和を取り戻した。しかしズミーの戦いは終わらない——伝説の報告書を作成しよう。
+            銀河は一時の平和を取り戻した。しかしズミーの戦いは終わらない——
           </p>
           <div className="mt-6 grid gap-3">
             <button
@@ -1052,10 +1052,10 @@ function StageClear({
 function DefeatCard({ stage, onRetry, onBackToMenu }) {
   return (
     <section className="rounded-3xl bg-white/4 px-5 py-6 text-white shadow-lg shadow-black/40 backdrop-blur">
-      <p className="text-sm font-semibold text-rose-300">ズミー劣勢</p>
+      <p className="text-sm font-semibold text-rose-300">ズミー敗北</p>
       <h2 className="mt-1 text-2xl font-black text-white">{stage.species}に押し切られた…</h2>
       <p className="mt-4 text-sm leading-relaxed text-rose-100/80">
-        誤射が続きライフが尽きてしまった。呼吸を整え、ターゲットだけを正確に狙おう。
+        ゴキブリ如きに負け続ける人生でいいのか、ズミー。己を奮い立たせろ。
       </p>
       <div className="mt-6 grid gap-3">
         <button
@@ -1082,9 +1082,9 @@ function FinalReport({ difficulty, onRestart }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/50 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">GOKI WARS 完了報告</p>
-      <h2 className="mt-1 text-3xl font-black text-white">ズミーの伝説が更新された！</h2>
+      <h2 className="mt-1 text-3xl font-black text-white">ズミーの勝利！</h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
-        地獄のG軍勢を打ち破り、銀河に平和が戻った。難易度 {config.title} の征伐データはホロレコーダーに記録された。
+        地獄のG軍を駆逐した！銀河と県立大学に平和が戻った。
       </p>
       <p className="mt-4 text-xs text-emerald-100/80">
         さらなる強さを求めるなら別の難易度に挑戦し、新たな敵シルエットに慣れていこう。
