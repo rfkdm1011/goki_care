@@ -26,7 +26,7 @@ const DIFFICULTIES = {
     spawnInterval: 1100,
     speedRange: [2500, 4400],
     spawnCountRange: [2, 3],
-    killTarget: 20,
+    killTarget: 10,
     decoys: ['badge', 'light', 'capsule'],
   },
   inferno: {
@@ -39,7 +39,7 @@ const DIFFICULTIES = {
     spawnInterval: 900,
     speedRange: [2400, 4200],
     spawnCountRange: [2, 4],
-    killTarget: 30,
+    killTarget: 50,
     decoys: ['capsule', 'drone', 'spark'],
   },
 };
@@ -48,7 +48,7 @@ const SUPER_ROACH = {
   type: 'super',
   label: 'すーぱーキラキラうんこちゃん',
   killCount: 100,
-  spawnChance: 0.08,
+  spawnChance: 0.3,
 };
 
 const STAGES = [
