@@ -8,6 +8,9 @@ import kuroInfernoImage from './assets/kuro2.png';
 import wamonImage from './assets/wamon.png';
 import wamonInfernoImage from './assets/wamon2.png';
 import logoImage from '../logo.png';
+import decoyNuImage from './assets/decoy_nu.png';
+import decoyShinchanImage from './assets/decoy_shinchan.png';
+import decoySutabaImage from './assets/decoy_sutaba.png';
 
 const MAX_LIVES = 3;
 const DEFAULT_KILL_TARGET = 10;
@@ -226,32 +229,49 @@ function StageRoach({ stage, difficulty }) {
   return <RoachGraphic difficulty={difficulty} />;
 }
 
+const DECOY_ASSETS = {
+  badge: {
+    src: decoyNuImage,
+    alt: 'デコイ：ぬいぐるみのターゲット',
+  },
+  light: {
+    src: decoyShinchanImage,
+    alt: 'デコイ：しんちゃんのターゲット',
+  },
+  capsule: {
+    src: decoySutabaImage,
+    alt: 'デコイ：スタバアイテムのターゲット',
+  },
+  drone: {
+    src: decoyNuImage,
+    alt: 'デコイ：ぬいぐるみのターゲット',
+  },
+  spark: {
+    src: decoyShinchanImage,
+    alt: 'デコイ：しんちゃんのターゲット',
+  },
+  hero: {
+    src: decoySutabaImage,
+    alt: 'デコイ：スタバアイテムのターゲット',
+  },
+  default: {
+    src: decoyNuImage,
+    alt: 'デコイターゲット',
+  },
+};
+
 function DecoyGraphic({ variant }) {
-  switch (variant) {
-    case 'badge':
-      return <div className="decoy decoy-badge" />;
-    case 'light':
-      return <div className="decoy decoy-light" />;
-    case 'capsule':
-      return (
-        <div className="decoy decoy-capsule">
-          <span />
-        </div>
-      );
-    case 'drone':
-      return (
-        <div className="decoy decoy-drone">
-          <span className="wing left" />
-          <span className="wing right" />
-        </div>
-      );
-    case 'spark':
-      return <div className="decoy decoy-spark" />;
-    case 'hero':
-      return <div className="decoy decoy-hero" />;
-    default:
-      return <div className="decoy decoy-badge" />;
-  }
+  const decoyAsset = DECOY_ASSETS[variant] ?? DECOY_ASSETS.default;
+
+  return (
+    <div className="decoy">
+      <img
+        src={decoyAsset.src}
+        alt={decoyAsset.alt}
+        className="decoy-image"
+      />
+    </div>
+  );
 }
 
 function ClassicFloatingObject({ stage, object, difficulty, onTap, reduceMotion }) {
