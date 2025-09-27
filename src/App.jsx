@@ -48,7 +48,7 @@ const SUPER_ROACH = {
   type: 'super',
   label: 'すーぱーキラキラうんこちゃん',
   killCount: 100,
-  spawnChance: 0.01,
+  spawnChance: 0.08,
 };
 
 const STAGES = [
