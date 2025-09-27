@@ -975,6 +975,13 @@ function StageIntro({ stage, killTarget, onStart, difficulty }) {
   );
 }
 
+const SUPER_ROACH_STAGE_MESSAGES = {
+  1: '【す〜ぱ〜キラキラ☆うんこちゃん】を見つけたよ！ステージクリアだよ！',
+  2: '【す〜ぱ〜キラキラ☆うんこちゃん】を見つけたよ！ステージクリアだよ！そういう仕様だよ！',
+  3: '【す〜ぱ〜キラキラ☆うんこちゃん】を見つけたよ！ステージクリアだよ！そういう仕様だよ！疑問を持ってはいけないよ！',
+  4: 'うんこにばっかり頼ってないで実力で勝負しろよな。',
+};
+
 function StageClear({
   stage,
   isLastStage,
@@ -993,9 +1000,9 @@ function StageClear({
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
         ズミーはターゲットを{killTarget}匹撃破し、{stage.codename} セクターの制圧に成功した。
       </p>
-      {showSuperRoachMessage && isLastStage && (
+      {showSuperRoachMessage && SUPER_ROACH_STAGE_MESSAGES[stage.order] && (
         <p className="mt-4 rounded-2xl border border-amber-300/60 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-50">
-          【す〜ぱ〜キラキラ☆うんこちゃん】を捕まえたから、ゲームクリアです。そういう仕様です。ごちゃごちゃ言わないでください。
+          {SUPER_ROACH_STAGE_MESSAGES[stage.order]}
         </p>
       )}
       {isLastStage ? (
