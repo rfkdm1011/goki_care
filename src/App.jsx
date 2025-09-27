@@ -577,33 +577,41 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       setLasers((prev) => prev.filter((item) => item.id !== id));
     }, 500);
 
+    let defeated = 0;
+    let superDefeated = false;
+
     setRoaches((prev) => {
-      const survivors = [];
-      let defeated = 0;
-      let superDefeated = false;
+      let closestRoach = null;
+      let closestDistance = Infinity;
+
       prev.forEach((roach) => {
-        const withinRange = Math.abs(roach.x - xPercent) <= 10;
-        if (withinRange) {
-          defeated += roach.killCount ?? 1;
-          if (roach.roachType === SUPER_ROACH.type) {
-            superDefeated = true;
-          }
-          const timeoutId = roachTimeoutsRef.current.get(roach.id);
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-            roachTimeoutsRef.current.delete(roach.id);
-          }
-        } else {
-          survivors.push(roach);
+        const distance = Math.abs(roach.x - xPercent);
+        if (distance <= 10 && distance < closestDistance) {
+          closestRoach = roach;
+          closestDistance = distance;
         }
       });
 
-      if (defeated > 0) {
-        onSuccess(defeated, { roachType: superDefeated ? SUPER_ROACH.type : undefined });
+      if (!closestRoach) {
+        return prev;
       }
 
-      return survivors;
+      defeated = closestRoach.killCount ?? 1;
+      if (closestRoach.roachType === SUPER_ROACH.type) {
+        superDefeated = true;
+      }
+      const timeoutId = roachTimeoutsRef.current.get(closestRoach.id);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        roachTimeoutsRef.current.delete(closestRoach.id);
+      }
+
+      return prev.filter((roach) => roach.id !== closestRoach.id);
     });
+
+    if (defeated > 0) {
+      onSuccess(defeated, { roachType: superDefeated ? SUPER_ROACH.type : undefined });
+    }
   };
 
   const handleAreaTap = (event) => {
