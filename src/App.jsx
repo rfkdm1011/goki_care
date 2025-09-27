@@ -622,6 +622,68 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     return { pointerX, pointerY };
   };
 
+  const selectTargetRoach = (forcedTargetId, pointerXPx, clampedXPercent) => {
+    let targetedRoach = null;
+    let bestHorizontalFit = Infinity;
+    let bestDepthScore = -Infinity;
+
+    if (forcedTargetId) {
+      targetedRoach = roaches.find((roach) => roach.id === forcedTargetId) ?? null;
+    }
+
+    if (!targetedRoach) {
+      roaches.forEach((roach) => {
+        const element = roachElementsRef.current.get(roach.id);
+        if (!element) {
+          return;
+        }
+
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const tolerancePx = Math.max(rect.width * 0.6, 40);
+        const horizontalDistancePx =
+          typeof pointerXPx === 'number' ? Math.abs(centerX - pointerXPx) : Infinity;
+        const isWithinColumn =
+          typeof pointerXPx === 'number'
+            ? horizontalDistancePx <= tolerancePx
+            : Math.abs((roach.x ?? 0) - clampedXPercent) <= 12;
+
+        if (!isWithinColumn) {
+          return;
+        }
+
+        const effectiveDistance =
+          typeof pointerXPx === 'number'
+            ? horizontalDistancePx
+            : Math.abs((roach.x ?? 0) - clampedXPercent);
+        const depthScore = rect.bottom;
+
+        if (
+          !targetedRoach ||
+          effectiveDistance < bestHorizontalFit - 0.5 ||
+          (Math.abs(effectiveDistance - bestHorizontalFit) <= 0.5 && depthScore > bestDepthScore)
+        ) {
+          targetedRoach = roach;
+          bestHorizontalFit = effectiveDistance;
+          bestDepthScore = depthScore;
+        }
+      });
+
+      if (!targetedRoach) {
+        roaches.forEach((roach) => {
+          const distance = Math.abs((roach.x ?? 0) - clampedXPercent);
+          if (distance <= 12 && distance < bestHorizontalFit) {
+            targetedRoach = roach;
+            bestHorizontalFit = distance;
+            bestDepthScore = -Infinity;
+          }
+        });
+      }
+    }
+
+    return targetedRoach;
+  };
+
   const fireLaser = ({ xPercent, clientX, clientY, forcedTargetId = null }) => {
     const clampedXPercent = Math.min(Math.max(typeof xPercent === 'number' ? xPercent : 0, 0), 100);
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -631,7 +693,6 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       setLasers((prev) => prev.filter((item) => item.id !== id));
     }, 500);
 
-    let defeatedRoach = null;
     const containerRect = containerRef.current?.getBoundingClientRect() ?? null;
     const pointerXPx =
       typeof clientX === 'number'
@@ -640,85 +701,24 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
           ? containerRect.left + (clampedXPercent / 100) * containerRect.width
           : null;
 
-    setRoaches((prev) => {
-      let targetedRoach = null;
-      let bestHorizontalFit = Infinity;
-      let bestDepthScore = -Infinity;
+    const targetedRoach = selectTargetRoach(forcedTargetId, pointerXPx, clampedXPercent);
 
-      if (forcedTargetId) {
-        targetedRoach = prev.find((roach) => roach.id === forcedTargetId) ?? null;
-      }
-
-      if (!targetedRoach) {
-        prev.forEach((roach) => {
-          const element = roachElementsRef.current.get(roach.id);
-          if (!element) {
-            return;
-          }
-
-          const rect = element.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const tolerancePx = Math.max(rect.width * 0.6, 40);
-          const horizontalDistancePx =
-            typeof pointerXPx === 'number' ? Math.abs(centerX - pointerXPx) : Infinity;
-          const isWithinColumn =
-            typeof pointerXPx === 'number'
-              ? horizontalDistancePx <= tolerancePx
-              : Math.abs((roach.x ?? 0) - clampedXPercent) <= 12;
-
-          if (!isWithinColumn) {
-            return;
-          }
-
-          const effectiveDistance =
-            typeof pointerXPx === 'number'
-              ? horizontalDistancePx
-              : Math.abs((roach.x ?? 0) - clampedXPercent);
-          const depthScore = rect.bottom;
-
-          if (
-            !targetedRoach ||
-            effectiveDistance < bestHorizontalFit - 0.5 ||
-            (Math.abs(effectiveDistance - bestHorizontalFit) <= 0.5 && depthScore > bestDepthScore)
-          ) {
-            targetedRoach = roach;
-            bestHorizontalFit = effectiveDistance;
-            bestDepthScore = depthScore;
-          }
-        });
-
-        if (!targetedRoach) {
-          prev.forEach((roach) => {
-            const distance = Math.abs((roach.x ?? 0) - clampedXPercent);
-            if (distance <= 12 && distance < bestHorizontalFit) {
-              targetedRoach = roach;
-              bestHorizontalFit = distance;
-              bestDepthScore = -Infinity;
-            }
-          });
-        }
-      }
-
-      if (!targetedRoach) {
-        return prev;
-      }
-
-      const timeoutId = roachTimeoutsRef.current.get(targetedRoach.id);
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        roachTimeoutsRef.current.delete(targetedRoach.id);
-      }
-
-      defeatedRoach = targetedRoach;
-
-      return prev.filter((roach) => roach.id !== targetedRoach.id);
-    });
-
-    if (defeatedRoach) {
-      const isSuperRoach = defeatedRoach.roachType === SUPER_ROACH.type;
-      const points = isSuperRoach ? SUPER_ROACH.killCount : 1;
-      onSuccess(points, { roachType: defeatedRoach.roachType });
+    if (!targetedRoach) {
+      return;
     }
+
+    const timeoutId = roachTimeoutsRef.current.get(targetedRoach.id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      roachTimeoutsRef.current.delete(targetedRoach.id);
+    }
+
+    setRoaches((prev) => prev.filter((roach) => roach.id !== targetedRoach.id));
+
+    const isSuperRoach = targetedRoach.roachType === SUPER_ROACH.type;
+    const points =
+      targetedRoach.killCount ?? (isSuperRoach ? SUPER_ROACH.killCount : 1);
+    onSuccess(points, { roachType: targetedRoach.roachType });
   };
 
   const handleStageFire = (event) => {
