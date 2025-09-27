@@ -32,7 +32,7 @@ const DIFFICULTIES = {
     flavor: '生き残れる者のみが伝説となる。反射神経を極限まで研ぎ澄ませ。',
     roachRatio: 0.45,
     spawnInterval: 250,
-    speedRange: [2100, 3000],
+    speedRange: [2300, 4000],
     spawnCountRange: [2, 10],
     killTarget: 100,
     decoys: ['capsule', 'drone', 'spark'],
