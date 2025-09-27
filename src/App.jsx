@@ -31,14 +31,14 @@ const DIFFICULTIES = {
   },
   inferno: {
     label: '地獄モード',
-    description: '可愛さ皆無。初速MAXの地上最強繁殖モンスター。',
+    description: 'まさに地獄。可愛さ皆無。初速MAXの地上最強繁殖モンスター。',
     hint: '光り輝きし"モノ"が我々を導いてくれるかも知れない…',
-    flavor: 'わずかな隙を突いてくる強敵に備え、集中を切らさず挑め。',
+    flavor: '怒りを力に変え、一匹残らず駆逐せよ。フォースと共に。',
     roachRatio: 0.6,
     spawnInterval: 900,
     speedRange: [2400, 4200],
     spawnCountRange: [2, 4],
-    killTarget: 50,
+    killTarget: 100,
     decoys: ['capsule', 'drone', 'spark', 'heiji'],
   },
 };
