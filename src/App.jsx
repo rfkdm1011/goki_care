@@ -1337,14 +1337,14 @@ function InfernoReward({ onViewFinal, onRestart }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/50 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">豪華景品</p>
-      <h2 className="mt-1 text-3xl font-black text-white">地獄モード完全制覇！</h2>
+      <h2 className="mt-1 text-3xl font-black text-white">👏Congratulations🎉</h2>
       <div className="mt-6 flex flex-col items-center gap-4 rounded-3xl border border-emerald-200/40 bg-slate-900/60 p-6 text-center">
         <img
           src={domeRewardImage}
           alt="どめ3歳からのスペシャルご褒美"
           className="w-full max-w-xs rounded-2xl border border-emerald-200/40 shadow-lg shadow-emerald-900/40"
         />
-        <p className="text-lg font-semibold text-emerald-50">おめでと(どめ3歳)</p>
+        <p className="text-lg font-semibold text-emerald-50">(どめ5歳)</p>
       </div>
       <div className="mt-6 grid gap-3">
         <button
