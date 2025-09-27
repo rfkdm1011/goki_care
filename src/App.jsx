@@ -11,6 +11,7 @@ import logoImage from '../logo.png';
 import decoyNuImage from './assets/decoy_nu.png';
 import decoyShinchanImage from './assets/decoy_shinchan.png';
 import decoySutabaImage from './assets/decoy_sutaba.png';
+import decoyHeijiImage from './assets/decoy_heiji.png';
 import superRoachImage from './assets/unko.png';
 
 const MAX_LIVES = 3;
@@ -27,7 +28,7 @@ const DIFFICULTIES = {
     speedRange: [2500, 4400],
     spawnCountRange: [2, 3],
     killTarget: 10,
-    decoys: ['badge', 'light', 'capsule'],
+    decoys: ['badge', 'light', 'capsule', 'heiji'],
   },
   inferno: {
     label: '地獄モード',
@@ -40,7 +41,7 @@ const DIFFICULTIES = {
     speedRange: [2400, 4200],
     spawnCountRange: [2, 4],
     killTarget: 50,
-    decoys: ['capsule', 'drone', 'spark'],
+    decoys: ['capsule', 'drone', 'spark', 'heiji'],
   },
 };
 
@@ -315,6 +316,10 @@ const DECOY_ASSETS = {
   hero: {
     src: decoySutabaImage,
     alt: 'デコイ：スタバアイテムのターゲット',
+  },
+  heiji: {
+    src: decoyHeijiImage,
+    alt: 'デコイ：へいじのターゲット',
   },
   default: {
     src: decoyNuImage,
