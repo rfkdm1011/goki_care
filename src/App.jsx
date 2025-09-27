@@ -13,6 +13,7 @@ import decoyNuImage from './assets/decoy_nu.png';
 import decoyShinchanImage from './assets/decoy_shinchan.png';
 import decoySutabaImage from './assets/decoy_sutaba.png';
 import decoyHeijiImage from './assets/decoy_heiji.png';
+import decoyMosaImage from './assets/decoy_mosa.png';
 import superRoachImage from './assets/unko.png';
 
 const MAX_LIVES = 3;
@@ -28,7 +29,7 @@ const DIFFICULTIES = {
     speedRange: [2500, 4400],
     spawnCountRange: [2, 3],
     killTarget: 10,
-    decoys: ['badge', 'light', 'capsule', 'heiji'],
+    decoys: ['badge', 'light', 'capsule', 'heiji', 'mosa'],
   },
   inferno: {
     label: '地獄モード',
@@ -40,7 +41,7 @@ const DIFFICULTIES = {
     speedRange: [2400, 4200],
     spawnCountRange: [2, 4],
     killTarget: 100,
-    decoys: ['capsule', 'drone', 'spark', 'heiji'],
+    decoys: ['capsule', 'drone', 'spark', 'heiji', 'mosa'],
   },
 };
 
@@ -320,6 +321,10 @@ const DECOY_ASSETS = {
     src: decoyHeijiImage,
     alt: 'デコイ：へいじのターゲット',
   },
+  mosa: {
+    src: decoyMosaImage,
+    alt: 'デコイ：巨大モザイクトラップのターゲット',
+  },
   default: {
     src: decoyNuImage,
     alt: 'デコイターゲット',
@@ -328,13 +333,17 @@ const DECOY_ASSETS = {
 
 function DecoyGraphic({ variant }) {
   const decoyAsset = DECOY_ASSETS[variant] ?? DECOY_ASSETS.default;
+  const className = ['decoy-image'];
+  if (variant) {
+    className.push(`decoy-image-${variant}`);
+  }
 
   return (
     <div className="decoy">
       <img
         src={decoyAsset.src}
         alt={decoyAsset.alt}
-        className="decoy-image"
+        className={className.join(' ')}
       />
     </div>
   );
@@ -423,6 +432,9 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
       if (roachProfile?.roachType === SUPER_ROACH.type) {
         appearanceDuration = Math.min(Math.floor(appearanceDuration * 1.8), 2200);
         scale = Math.max(scale, 1.35);
+      }
+      if (!isRoach && variant === 'mosa') {
+        scale = Math.max(scale, 1.65);
       }
       const newObject = {
         id,
@@ -890,6 +902,9 @@ function ClassicStage({ stage, difficulty, difficultyConfig, roachRatio, onSucce
         if (roachProfile?.roachType === SUPER_ROACH.type) {
           duration = Math.floor(duration * 1.6);
           scale = Math.max(scale, 1.35);
+        }
+        if (!isRoach && variant === 'mosa') {
+          scale = Math.max(scale, 1.65);
         }
         const newObject = {
           id,
