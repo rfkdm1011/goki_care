@@ -8,6 +8,7 @@ import kuroInfernoImage from './assets/kuro2.png';
 import wamonImage from './assets/wamon.png';
 import wamonInfernoImage from './assets/wamon2.png';
 import logoImage from '../logo.png';
+import domeRewardImage from '../dome.png';
 import decoyNuImage from './assets/decoy_nu.png';
 import decoyShinchanImage from './assets/decoy_shinchan.png';
 import decoySutabaImage from './assets/decoy_sutaba.png';
@@ -1229,6 +1230,8 @@ function StageClear({
   onBackToMenu,
   showSuperRoachMessage = false,
   difficulty,
+  canViewInfernoReward = false,
+  onViewInfernoReward,
 }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/40 backdrop-blur">
@@ -1241,7 +1244,7 @@ function StageClear({
       </p>
       {difficulty === 'inferno' && (
         <p className="mt-4 rounded-2xl border border-emerald-300/60 bg-emerald-500/10 px-4 py-3 text-sm leading-relaxed text-emerald-50">
-          クリア画面のスクショをふくどめ氏に送ろう！豪華景品ゲットのチャンス💎
+          地獄モード制覇の証が解禁された！「豪華景品を見る」ボタンから確認せよ。
         </p>
       )}
       {showSuperRoachMessage && SUPER_ROACH_STAGE_MESSAGES[stage.order] && (
@@ -1255,6 +1258,15 @@ function StageClear({
             銀河は一時の平和を取り戻した。しかしズミーの戦いは終わらない——
           </p>
           <div className="mt-6 grid gap-3">
+            {canViewInfernoReward && (
+              <button
+                type="button"
+                onClick={onViewInfernoReward}
+                className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-300 px-6 py-3 text-lg font-bold text-slate-900 shadow-lg shadow-emerald-900/40 transition hover:brightness-105"
+              >
+                豪華景品を見る
+              </button>
+            )}
             <button
               type="button"
               onClick={onFinal}
@@ -1313,6 +1325,39 @@ function DefeatCard({ stage, onRetry, onBackToMenu }) {
           type="button"
           onClick={onBackToMenu}
           className="w-full rounded-2xl border border-rose-200/50 bg-transparent px-6 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-200/10"
+        >
+          難易度選択に戻る
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function InfernoReward({ onViewFinal, onRestart }) {
+  return (
+    <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/50 backdrop-blur">
+      <p className="text-sm font-semibold text-emerald-200">豪華景品</p>
+      <h2 className="mt-1 text-3xl font-black text-white">地獄モード完全制覇！</h2>
+      <div className="mt-6 flex flex-col items-center gap-4 rounded-3xl border border-emerald-200/40 bg-slate-900/60 p-6 text-center">
+        <img
+          src={domeRewardImage}
+          alt="どめ3歳からのスペシャルご褒美"
+          className="w-full max-w-xs rounded-2xl border border-emerald-200/40 shadow-lg shadow-emerald-900/40"
+        />
+        <p className="text-lg font-semibold text-emerald-50">おめでと(どめ3歳)</p>
+      </div>
+      <div className="mt-6 grid gap-3">
+        <button
+          type="button"
+          onClick={onViewFinal}
+          className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-500 px-6 py-3 text-lg font-bold text-slate-900 shadow-lg shadow-emerald-900/40 transition hover:brightness-105"
+        >
+          最終報告を見る
+        </button>
+        <button
+          type="button"
+          onClick={onRestart}
+          className="w-full rounded-2xl border border-emerald-300/50 bg-transparent px-6 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-300/10"
         >
           難易度選択に戻る
         </button>
@@ -1493,6 +1538,16 @@ export default function App() {
     setPhase('complete');
   };
 
+  const handleViewInfernoReward = () => {
+    if (difficulty === 'inferno') {
+      setPhase('reward');
+    }
+  };
+
+  const handleCloseInfernoReward = () => {
+    setPhase('complete');
+  };
+
   const livesDisplay = useMemo(() => {
     return Array.from({ length: MAX_LIVES }, (_, index) => index < lives);
   }, [lives]);
@@ -1623,10 +1678,16 @@ export default function App() {
             onBackToMenu={handleBackToMenu}
             showSuperRoachMessage={defeatedSuperRoachThisStage}
             difficulty={difficulty}
+            canViewInfernoReward={difficulty === 'inferno' && isLastStage}
+            onViewInfernoReward={handleViewInfernoReward}
           />
         )}
 
         {phase === 'defeat' && <DefeatCard stage={stage} onRetry={handleRetryStage} onBackToMenu={handleBackToMenu} />}
+
+        {phase === 'reward' && difficulty === 'inferno' && (
+          <InfernoReward onViewFinal={handleCloseInfernoReward} onRestart={handleBackToMenu} />
+        )}
 
         {phase === 'complete' && difficulty && <FinalReport difficulty={difficulty} onRestart={handleBackToMenu} />}
 
