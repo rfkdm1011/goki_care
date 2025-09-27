@@ -229,10 +229,40 @@ function getStageRoachImage(stage, difficulty) {
   return stage.roachImage ?? null;
 }
 
-function StageRoach({ stage, difficulty, roachType = 'standard' }) {
+function getRoachOrientationClass(stage, direction) {
+  const stageId = stage?.id;
+
+  if (stageId === 'stage-2' || stageId === 'stage-4') {
+    return 'roach-orientation-down';
+  }
+
+  if (stageId === 'stage-3') {
+    if (direction === 'left') {
+      return 'roach-orientation-right';
+    }
+
+    if (direction === 'right') {
+      return 'roach-orientation-left';
+    }
+  }
+
+  return null;
+}
+
+function StageRoach({ stage, difficulty, roachType = 'standard', direction }) {
+  const orientationClass = getRoachOrientationClass(stage, direction);
+
   if (roachType === SUPER_ROACH.type) {
     return (
-      <div className="roach-graphic roach-super">
+      <div
+        className={[
+          'roach-graphic',
+          'roach-super',
+          orientationClass,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <img
           src={superRoachImage}
           alt={`${SUPER_ROACH.label}のターゲット`}
@@ -245,7 +275,11 @@ function StageRoach({ stage, difficulty, roachType = 'standard' }) {
   const roachImage = getStageRoachImage(stage, difficulty);
   if (roachImage) {
     return (
-      <div className="roach-graphic">
+      <div
+        className={['roach-graphic', orientationClass]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <img
           src={roachImage}
           alt={stage?.roachAlt ?? `${stage?.species ?? 'G'}のターゲット`}
@@ -337,7 +371,12 @@ function ClassicFloatingObject({ stage, object, difficulty, onTap, reduceMotion 
         style={{ transform: `scale(${object.scale})` }}
       >
         {object.isRoach ? (
-          <StageRoach stage={stage} difficulty={difficulty} roachType={object.roachType} />
+          <StageRoach
+            stage={stage}
+            difficulty={difficulty}
+            roachType={object.roachType}
+            direction={object.direction}
+          />
         ) : (
           <DecoyGraphic variant={object.variant} />
         )}

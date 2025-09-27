@@ -84,6 +84,18 @@ button {
   pointer-events: none;
 }
 
+.roach-graphic.roach-orientation-down {
+  transform: rotate(180deg);
+}
+
+.roach-graphic.roach-orientation-left {
+  transform: rotate(-90deg);
+}
+
+.roach-graphic.roach-orientation-right {
+  transform: rotate(90deg);
+}
+
 .roach-image {
   width: 72px;
   height: 72px;
