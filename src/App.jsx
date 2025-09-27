@@ -11,6 +11,7 @@ import logoImage from '../logo.png';
 import decoyNuImage from './assets/decoy_nu.png';
 import decoyShinchanImage from './assets/decoy_shinchan.png';
 import decoySutabaImage from './assets/decoy_sutaba.png';
+import superRoachImage from './assets/unko.png';
 
 const MAX_LIVES = 3;
 const DEFAULT_KILL_TARGET = 10;
@@ -32,6 +33,7 @@ const DIFFICULTIES = {
     label: '地獄モード',
     title: '地獄モード',
     description: 'やさしさモードよりも一枚上手な強敵。油断は禁物だが冷静に対処すべし。',
+    hint: '光り輝くものが、我々を導いてくれるかも知れない…',
     flavor: 'わずかな隙を突いてくる強敵に備え、集中を切らさず挑め。',
     roachRatio: 0.6,
     spawnInterval: 900,
@@ -40,6 +42,13 @@ const DIFFICULTIES = {
     killTarget: 30,
     decoys: ['capsule', 'drone', 'spark'],
   },
+};
+
+const SUPER_ROACH = {
+  type: 'super',
+  label: 'すーぱーキラキラうんこちゃん',
+  killCount: 100,
+  spawnChance: 0.01,
 };
 
 const STAGES = [
@@ -132,6 +141,14 @@ const STAGES = [
 
 const randomBetween = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
+function getRoachProfile(difficulty) {
+  if (difficulty === 'inferno' && Math.random() < SUPER_ROACH.spawnChance) {
+    return { roachType: SUPER_ROACH.type, killCount: SUPER_ROACH.killCount };
+  }
+
+  return { roachType: 'standard', killCount: 1 };
+}
+
 function usePrefersReducedMotion() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
@@ -212,7 +229,19 @@ function getStageRoachImage(stage, difficulty) {
   return stage.roachImage ?? null;
 }
 
-function StageRoach({ stage, difficulty }) {
+function StageRoach({ stage, difficulty, roachType = 'standard' }) {
+  if (roachType === SUPER_ROACH.type) {
+    return (
+      <div className="roach-graphic roach-super">
+        <img
+          src={superRoachImage}
+          alt={`${SUPER_ROACH.label}のターゲット`}
+          className="roach-image roach-super-image"
+        />
+      </div>
+    );
+  }
+
   const roachImage = getStageRoachImage(stage, difficulty);
   if (roachImage) {
     return (
@@ -308,7 +337,7 @@ function ClassicFloatingObject({ stage, object, difficulty, onTap, reduceMotion 
         style={{ transform: `scale(${object.scale})` }}
       >
         {object.isRoach ? (
-          <StageRoach stage={stage} difficulty={difficulty} />
+          <StageRoach stage={stage} difficulty={difficulty} roachType={object.roachType} />
         ) : (
           <DecoyGraphic variant={object.variant} />
         )}
@@ -344,7 +373,17 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
       const left = randomBetween(18, 82);
       const scale = Math.random() * 0.4 + 0.8;
 
-      const newObject = { id, isRoach, variant, top, left, scale, appearanceDuration };
+      const roachProfile = isRoach ? getRoachProfile(difficulty) : null;
+      const newObject = {
+        id,
+        isRoach,
+        variant,
+        top,
+        left,
+        scale,
+        appearanceDuration,
+        ...(roachProfile ?? {}),
+      };
       setObjects((prev) => [...prev, newObject]);
 
       const timeout = setTimeout(() => {
@@ -364,12 +403,12 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
         intervalRef.current = null;
       }
     };
-  }, [difficultyConfig, roachRatio]);
+  }, [difficultyConfig, roachRatio, difficulty]);
 
   const handleTap = (object) => {
     setObjects((prev) => prev.filter((item) => item.id !== object.id));
     if (object.isRoach) {
-      onSuccess(1);
+      onSuccess(object.killCount ?? 1);
     } else {
       onMistake();
     }
@@ -411,7 +450,7 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
             onClick={() => handleTap(object)}
           >
             {object.isRoach ? (
-              <StageRoach stage={stage} difficulty={difficulty} />
+              <StageRoach stage={stage} difficulty={difficulty} roachType={object.roachType} />
             ) : (
               <DecoyGraphic variant={object.variant} />
             )}
@@ -449,7 +488,8 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`;
         const x = randomBetween(12, 88);
         const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
-        const roach = { id, x, duration };
+        const roachProfile = getRoachProfile(difficulty);
+        const roach = { id, x, duration, ...roachProfile };
         setRoaches((prev) => [...prev, roach]);
 
         const timeout = setTimeout(() => {
@@ -472,7 +512,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
         spawnIntervalRef.current = null;
       }
     };
-  }, [difficultyConfig, onMistake]);
+  }, [difficultyConfig, onMistake, difficulty]);
 
   const fireLaser = (xPercent) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -488,7 +528,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       prev.forEach((roach) => {
         const withinRange = Math.abs(roach.x - xPercent) <= 10;
         if (withinRange) {
-          defeated += 1;
+          defeated += roach.killCount ?? 1;
           const timeoutId = roachTimeoutsRef.current.get(roach.id);
           if (timeoutId) {
             clearTimeout(timeoutId);
@@ -543,7 +583,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
           .join(' ');
         return (
           <div key={roach.id} className={className} style={style}>
-            <StageRoach stage={stage} difficulty={difficulty} />
+            <StageRoach stage={stage} difficulty={difficulty} roachType={roach.roachType} />
           </div>
         );
       })}
@@ -586,7 +626,18 @@ function ClassicStage({ stage, difficulty, difficultyConfig, roachRatio, onSucce
         const variant = variantPool.length > 0 ? variantPool[randomBetween(0, variantPool.length - 1)] : 'badge';
         const staticLeft = randomBetween(12, 88);
         const direction = Math.random() < 0.5 ? 'left' : 'right';
-        const newObject = { id, isRoach, duration, top, scale, variant, staticLeft, direction };
+        const roachProfile = isRoach ? getRoachProfile(difficulty) : null;
+        const newObject = {
+          id,
+          isRoach,
+          duration,
+          top,
+          scale,
+          variant,
+          staticLeft,
+          direction,
+          ...(roachProfile ?? {}),
+        };
         setObjects((prev) => [...prev, newObject]);
         const timeout = setTimeout(() => {
           setObjects((prev) => prev.filter((item) => item.id !== id));
@@ -606,12 +657,12 @@ function ClassicStage({ stage, difficulty, difficultyConfig, roachRatio, onSucce
         intervalRef.current = null;
       }
     };
-  }, [difficultyConfig, roachRatio]);
+  }, [difficultyConfig, roachRatio, difficulty]);
 
   const handleObjectTap = (object) => {
     setObjects((prev) => prev.filter((item) => item.id !== object.id));
     if (object.isRoach) {
-      onSuccess(1);
+      onSuccess(object.killCount ?? 1);
     } else {
       onMistake();
     }
@@ -668,7 +719,16 @@ function SaberStage({ stage, difficulty, difficultyConfig, onSuccess, onMistake,
       );
       const strikeStart = duration * 0.55;
       const strikeEnd = duration * 0.72;
-      const enemy = { id, x, duration, status: 'approach', strikeStart, strikeEnd };
+      const roachProfile = getRoachProfile(difficulty);
+      const enemy = {
+        id,
+        x,
+        duration,
+        status: 'approach',
+        strikeStart,
+        strikeEnd,
+        ...roachProfile,
+      };
       setEnemies((prev) => [...prev, enemy]);
 
       const readyTimeout = setTimeout(() => {
@@ -702,7 +762,7 @@ function SaberStage({ stage, difficulty, difficultyConfig, onSuccess, onMistake,
         intervalRef.current = null;
       }
     };
-  }, [difficultyConfig, onMistake]);
+  }, [difficultyConfig, onMistake, difficulty]);
 
   const registerSlash = () => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -727,7 +787,7 @@ function SaberStage({ stage, difficulty, difficultyConfig, onSuccess, onMistake,
         timeoutsRef.current.delete(readyEnemy.id);
       }
 
-      onSuccess(1);
+      onSuccess(readyEnemy.killCount ?? 1);
       return prev.filter((enemy) => enemy.id !== readyEnemy.id);
     });
   };
@@ -757,7 +817,7 @@ function SaberStage({ stage, difficulty, difficultyConfig, onSuccess, onMistake,
         }
         return (
           <div key={enemy.id} className={className} style={style}>
-            <StageRoach stage={stage} difficulty={difficulty} />
+            <StageRoach stage={stage} difficulty={difficulty} roachType={enemy.roachType} />
           </div>
         );
       })}
@@ -1011,6 +1071,9 @@ function DifficultySelect({ onSelect }) {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">{config.label}</p>
             <p className="mt-1 text-lg font-bold text-white">{config.title}</p>
             <p className="mt-2 text-xs text-emerald-100/80">{config.description}</p>
+            {config.hint ? (
+              <p className="mt-1 text-[10px] text-emerald-200/70">{config.hint}</p>
+            ) : null}
             <p className="mt-3 text-[11px] text-emerald-100/60">{config.flavor}</p>
             <p className="mt-3 text-[11px] text-emerald-100/70">
               撃破目標: {config.killTarget}
