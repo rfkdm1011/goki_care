@@ -515,6 +515,16 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
   const [lasers, setLasers] = useState([]);
   const roachTimeoutsRef = useRef(new Map());
   const spawnIntervalRef = useRef(null);
+  const containerRef = useRef(null);
+  const roachElementsRef = useRef(new Map());
+
+  const registerRoachElement = (roachId) => (node) => {
+    if (node) {
+      roachElementsRef.current.set(roachId, node);
+    } else {
+      roachElementsRef.current.delete(roachId);
+    }
+  };
 
   useEffect(() => {
     roachTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
@@ -524,6 +534,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       spawnIntervalRef.current = null;
     }
     setRoaches([]);
+    roachElementsRef.current.clear();
 
     if (!difficultyConfig) {
       return () => {};
@@ -577,7 +588,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     };
   }, [difficultyConfig, onMistake, difficulty, stage]);
 
-  const fireLaser = (xPercent) => {
+  const fireLaser = ({ xPercent, clientX, clientY }) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const laser = { id, x: xPercent };
     setLasers((prev) => [...prev, laser]);
@@ -592,12 +603,34 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       let closestDistance = Infinity;
 
       prev.forEach((roach) => {
-        const distance = Math.abs(roach.x - xPercent);
-        if (distance <= 10 && distance < closestDistance) {
+        const element = roachElementsRef.current.get(roach.id);
+        if (!element) {
+          return;
+        }
+
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const detectionRadius = Math.max(rect.width, rect.height) * 0.55;
+        const pointerX = typeof clientX === 'number' ? clientX : centerX;
+        const pointerY = typeof clientY === 'number' ? clientY : centerY;
+        const distance = Math.hypot(centerX - pointerX, centerY - pointerY);
+
+        if (Number.isFinite(distance) && distance <= detectionRadius && distance < closestDistance) {
           closestRoach = roach;
           closestDistance = distance;
         }
       });
+
+      if (!closestRoach) {
+        prev.forEach((roach) => {
+          const distance = Math.abs((roach.x ?? 0) - xPercent);
+          if (distance <= 12 && distance < closestDistance) {
+            closestRoach = roach;
+            closestDistance = distance;
+          }
+        });
+      }
 
       if (!closestRoach) {
         return prev;
@@ -615,10 +648,9 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     });
 
     if (defeatedRoach) {
-      const defeatedCount = defeatedRoach.killCount ?? 1;
-      const roachType =
-        defeatedRoach.roachType === SUPER_ROACH.type ? SUPER_ROACH.type : undefined;
-      onSuccess(defeatedCount, roachType ? { roachType } : {});
+      const isSuperRoach = defeatedRoach.roachType === SUPER_ROACH.type;
+      const points = isSuperRoach ? SUPER_ROACH.killCount : 1;
+      onSuccess(points, { roachType: defeatedRoach.roachType });
     }
   };
 
@@ -626,9 +658,31 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     if (!difficultyConfig) {
       return;
     }
-    const rect = event.currentTarget.getBoundingClientRect();
-    const xPercent = ((event.clientX - rect.left) / rect.width) * 100;
-    fireLaser(xPercent);
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+
+    const nativeEvent = event.nativeEvent;
+    let pointerX = event.clientX;
+    let pointerY = event.clientY;
+
+    if ((typeof pointerX !== 'number' || typeof pointerY !== 'number') && nativeEvent) {
+      const touch = nativeEvent.changedTouches?.[0] ?? nativeEvent.touches?.[0];
+      if (touch) {
+        pointerX = touch.clientX;
+        pointerY = touch.clientY;
+      }
+    }
+
+    if (typeof pointerX !== 'number' || typeof pointerY !== 'number') {
+      return;
+    }
+
+    const rawXPercent = ((pointerX - rect.left) / rect.width) * 100;
+    const clampedXPercent = Math.min(Math.max(rawXPercent, 0), 100);
+
+    fireLaser({ xPercent: clampedXPercent, clientX: pointerX, clientY: pointerY });
   };
 
   if (!difficultyConfig) {
@@ -636,7 +690,12 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
   }
 
   return (
-    <div className="stage-shooter" onClick={handleAreaTap} role="presentation">
+    <div
+      className="stage-shooter"
+      onClick={handleAreaTap}
+      role="presentation"
+      ref={containerRef}
+    >
       <div className="shooter-sky" />
       {roaches.length === 0 && (
         <div className="stage-placeholder">ズミーが照準を合わせている…</div>
@@ -657,7 +716,12 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
           .filter(Boolean)
           .join(' ');
         return (
-          <div key={roach.id} className={className} style={style}>
+          <div
+            key={roach.id}
+            className={className}
+            style={style}
+            ref={registerRoachElement(roach.id)}
+          >
             <StageRoach stage={stage} difficulty={difficulty} roachType={roach.roachType} />
           </div>
         );
