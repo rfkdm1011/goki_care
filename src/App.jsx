@@ -363,7 +363,10 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
       return () => {};
     }
 
-    const appearanceDuration = Math.max(Math.min(difficultyConfig.spawnInterval * 0.6, 900), 420);
+    const baseAppearanceDuration = Math.max(
+      Math.min(difficultyConfig.spawnInterval * 0.6, 900),
+      420,
+    );
     const spawn = () => {
       const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const isRoach = Math.random() < roachRatio;
@@ -371,9 +374,14 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
       const variant = variantPool.length > 0 ? variantPool[randomBetween(0, variantPool.length - 1)] : 'badge';
       const top = randomBetween(18, 82);
       const left = randomBetween(18, 82);
-      const scale = Math.random() * 0.4 + 0.8;
+      let appearanceDuration = baseAppearanceDuration;
+      let scale = Math.random() * 0.4 + 0.8;
 
       const roachProfile = isRoach ? getRoachProfile(difficulty) : null;
+      if (roachProfile?.roachType === SUPER_ROACH.type) {
+        appearanceDuration = Math.min(Math.floor(appearanceDuration * 1.8), 2200);
+        scale = Math.max(scale, 1.35);
+      }
       const newObject = {
         id,
         isRoach,
@@ -408,7 +416,7 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
   const handleTap = (object) => {
     setObjects((prev) => prev.filter((item) => item.id !== object.id));
     if (object.isRoach) {
-      onSuccess(object.killCount ?? 1);
+      onSuccess(object.killCount ?? 1, { roachType: object.roachType });
     } else {
       onMistake();
     }
@@ -487,8 +495,14 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       for (let index = 0; index < spawnCount; index += 1) {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`;
         const x = randomBetween(12, 88);
-        const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
+        let duration = randomBetween(
+          difficultyConfig.speedRange[0],
+          difficultyConfig.speedRange[1],
+        );
         const roachProfile = getRoachProfile(difficulty);
+        if (roachProfile?.roachType === SUPER_ROACH.type) {
+          duration = Math.floor(duration * 1.5);
+        }
         const roach = { id, x, duration, ...roachProfile };
         setRoaches((prev) => [...prev, roach]);
 
@@ -525,10 +539,14 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     setRoaches((prev) => {
       const survivors = [];
       let defeated = 0;
+      let superDefeated = false;
       prev.forEach((roach) => {
         const withinRange = Math.abs(roach.x - xPercent) <= 10;
         if (withinRange) {
           defeated += roach.killCount ?? 1;
+          if (roach.roachType === SUPER_ROACH.type) {
+            superDefeated = true;
+          }
           const timeoutId = roachTimeoutsRef.current.get(roach.id);
           if (timeoutId) {
             clearTimeout(timeoutId);
@@ -540,7 +558,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       });
 
       if (defeated > 0) {
-        onSuccess(defeated);
+        onSuccess(defeated, { roachType: superDefeated ? SUPER_ROACH.type : undefined });
       }
 
       return survivors;
@@ -620,13 +638,20 @@ function ClassicStage({ stage, difficulty, difficultyConfig, roachRatio, onSucce
       for (let index = 0; index < spawnCount; index += 1) {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`;
         const isRoach = Math.random() < roachRatio;
-        const duration = randomBetween(difficultyConfig.speedRange[0], difficultyConfig.speedRange[1]);
+        let duration = randomBetween(
+          difficultyConfig.speedRange[0],
+          difficultyConfig.speedRange[1],
+        );
         const top = randomBetween(8, 80);
-        const scale = Math.random() * 0.4 + 0.8;
+        let scale = Math.random() * 0.4 + 0.8;
         const variant = variantPool.length > 0 ? variantPool[randomBetween(0, variantPool.length - 1)] : 'badge';
         const staticLeft = randomBetween(12, 88);
         const direction = Math.random() < 0.5 ? 'left' : 'right';
         const roachProfile = isRoach ? getRoachProfile(difficulty) : null;
+        if (roachProfile?.roachType === SUPER_ROACH.type) {
+          duration = Math.floor(duration * 1.6);
+          scale = Math.max(scale, 1.35);
+        }
         const newObject = {
           id,
           isRoach,
@@ -662,7 +687,7 @@ function ClassicStage({ stage, difficulty, difficultyConfig, roachRatio, onSucce
   const handleObjectTap = (object) => {
     setObjects((prev) => prev.filter((item) => item.id !== object.id));
     if (object.isRoach) {
-      onSuccess(object.killCount ?? 1);
+      onSuccess(object.killCount ?? 1, { roachType: object.roachType });
     } else {
       onMistake();
     }
@@ -713,13 +738,16 @@ function SaberStage({ stage, difficulty, difficultyConfig, onSuccess, onMistake,
     const spawn = () => {
       const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const x = randomBetween(32, 68);
-      const duration = randomBetween(
+      let duration = randomBetween(
         Math.max(difficultyConfig.speedRange[0], 1600),
         Math.max(difficultyConfig.speedRange[1], 2200),
       );
+      const roachProfile = getRoachProfile(difficulty);
+      if (roachProfile?.roachType === SUPER_ROACH.type) {
+        duration = Math.floor(duration * 1.35);
+      }
       const strikeStart = duration * 0.55;
       const strikeEnd = duration * 0.72;
-      const roachProfile = getRoachProfile(difficulty);
       const enemy = {
         id,
         x,
@@ -787,7 +815,7 @@ function SaberStage({ stage, difficulty, difficultyConfig, onSuccess, onMistake,
         timeoutsRef.current.delete(readyEnemy.id);
       }
 
-      onSuccess(readyEnemy.killCount ?? 1);
+      onSuccess(readyEnemy.killCount ?? 1, { roachType: readyEnemy.roachType });
       return prev.filter((enemy) => enemy.id !== readyEnemy.id);
     });
   };
@@ -947,7 +975,15 @@ function StageIntro({ stage, killTarget, onStart, difficulty }) {
   );
 }
 
-function StageClear({ stage, isLastStage, killTarget, onNext, onFinal, onBackToMenu }) {
+function StageClear({
+  stage,
+  isLastStage,
+  killTarget,
+  onNext,
+  onFinal,
+  onBackToMenu,
+  showSuperRoachMessage = false,
+}) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-emerald-900/40 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">ズミー勝利</p>
@@ -957,6 +993,11 @@ function StageClear({ stage, isLastStage, killTarget, onNext, onFinal, onBackToM
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
         ズミーはターゲットを{killTarget}匹撃破し、{stage.codename} セクターの制圧に成功した。
       </p>
+      {showSuperRoachMessage && isLastStage && (
+        <p className="mt-4 rounded-2xl border border-amber-300/60 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-50">
+          【す〜ぱ〜キラキラ☆うんこちゃん】を捕まえたから、ゲームクリアです。そういう仕様です。ごちゃごちゃ言わないでください。
+        </p>
+      )}
       {isLastStage ? (
         <>
           <p className="mt-4 text-xs text-emerald-100/80">
@@ -1092,6 +1133,7 @@ export default function App() {
   const [killCount, setKillCount] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
   const [motionOverride, setMotionOverride] = useState(null);
+  const [defeatedSuperRoachThisStage, setDefeatedSuperRoachThisStage] = useState(false);
 
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -1138,15 +1180,21 @@ export default function App() {
     setStageIndex(0);
     setKillCount(0);
     setLives(MAX_LIVES);
+    setDefeatedSuperRoachThisStage(false);
   };
 
   const handleStartStage = () => {
     setKillCount(0);
     setLives(MAX_LIVES);
+    setDefeatedSuperRoachThisStage(false);
     setPhase('play');
   };
 
-  const handleSuccessfulHit = (count = 1) => {
+  const handleSuccessfulHit = (count = 1, options = {}) => {
+    const { roachType } = options ?? {};
+    if (roachType === SUPER_ROACH.type) {
+      setDefeatedSuperRoachThisStage(true);
+    }
     setKillCount((prev) => {
       const next = prev + count;
       if (next >= killTarget) {
@@ -1173,12 +1221,14 @@ export default function App() {
     setStageIndex((prev) => prev + 1);
     setKillCount(0);
     setLives(MAX_LIVES);
+    setDefeatedSuperRoachThisStage(false);
     setPhase('intro');
   };
 
   const handleRetryStage = () => {
     setKillCount(0);
     setLives(MAX_LIVES);
+    setDefeatedSuperRoachThisStage(false);
     setPhase('intro');
   };
 
@@ -1187,6 +1237,7 @@ export default function App() {
     setStageIndex(0);
     setKillCount(0);
     setLives(MAX_LIVES);
+    setDefeatedSuperRoachThisStage(false);
     setPhase('difficulty');
   };
 
@@ -1317,6 +1368,7 @@ export default function App() {
             onNext={handleNextStage}
             onFinal={handleGoToFinalReport}
             onBackToMenu={handleBackToMenu}
+            showSuperRoachMessage={defeatedSuperRoachThisStage}
           />
         )}
 
