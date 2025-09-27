@@ -47,7 +47,7 @@ const SUPER_ROACH = {
   type: 'super',
   label: 'す〜ぱ〜キラキラ☆うんこちゃん',
   killCount: 100,
-  spawnChance: 0.12,
+  spawnChance: 1 / 30,
 };
 
 const STAGES = [
@@ -529,8 +529,16 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       return () => {};
     }
 
+    let spawnInterval = difficultyConfig.spawnInterval ?? 1000;
+    let [minSpawn, maxSpawn] = difficultyConfig.spawnCountRange ?? [1, 1];
+
+    if (stage?.id === 'stage-2') {
+      spawnInterval = Math.max(Math.floor(spawnInterval * 1.35), 300);
+      minSpawn = Math.max(1, minSpawn - 1);
+      maxSpawn = Math.max(minSpawn, maxSpawn - 1);
+    }
+
     const spawn = () => {
-      const [minSpawn, maxSpawn] = difficultyConfig.spawnCountRange ?? [1, 1];
       const spawnCount = randomBetween(minSpawn, maxSpawn);
 
       for (let index = 0; index < spawnCount; index += 1) {
@@ -557,7 +565,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     };
 
     spawn();
-    spawnIntervalRef.current = setInterval(spawn, difficultyConfig.spawnInterval);
+    spawnIntervalRef.current = setInterval(spawn, spawnInterval);
 
     return () => {
       roachTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
@@ -567,7 +575,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
         spawnIntervalRef.current = null;
       }
     };
-  }, [difficultyConfig, onMistake, difficulty]);
+  }, [difficultyConfig, onMistake, difficulty, stage]);
 
   const fireLaser = (xPercent) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -577,8 +585,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       setLasers((prev) => prev.filter((item) => item.id !== id));
     }, 500);
 
-    let defeated = 0;
-    let superDefeated = false;
+    let defeatedRoach = null;
 
     setRoaches((prev) => {
       let closestRoach = null;
@@ -596,21 +603,22 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
         return prev;
       }
 
-      defeated = closestRoach.killCount ?? 1;
-      if (closestRoach.roachType === SUPER_ROACH.type) {
-        superDefeated = true;
-      }
       const timeoutId = roachTimeoutsRef.current.get(closestRoach.id);
       if (timeoutId) {
         clearTimeout(timeoutId);
         roachTimeoutsRef.current.delete(closestRoach.id);
       }
 
+      defeatedRoach = closestRoach;
+
       return prev.filter((roach) => roach.id !== closestRoach.id);
     });
 
-    if (defeated > 0) {
-      onSuccess(defeated, { roachType: superDefeated ? SUPER_ROACH.type : undefined });
+    if (defeatedRoach) {
+      const defeatedCount = defeatedRoach.killCount ?? 1;
+      const roachType =
+        defeatedRoach.roachType === SUPER_ROACH.type ? SUPER_ROACH.type : undefined;
+      onSuccess(defeatedCount, roachType ? { roachType } : {});
     }
   };
 
