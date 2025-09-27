@@ -812,8 +812,15 @@ function StageIntro({ stage, killTarget, onStart }) {
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-black/30 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">ステージ{stage.order}</p>
-      <h2 className="mt-1 text-2xl font-black text-white">
-        {stage.species}
+      <h2 className="mt-1 flex items-center gap-3 text-2xl font-black text-white">
+        {stage.roachImage ? (
+          <img
+            src={stage.roachImage}
+            alt={stage.roachAlt ?? `${stage.species}のターゲット`}
+            className="h-12 w-12 rounded-full bg-white/10 object-contain p-1"
+          />
+        ) : null}
+        <span>{stage.species}</span>
         <span className="ml-2 text-sm font-medium text-emerald-200"></span>
       </h2>
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">{stage.intro}</p>
