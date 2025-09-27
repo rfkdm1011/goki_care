@@ -92,6 +92,48 @@ button {
   filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.45));
 }
 
+.roach-super {
+  position: relative;
+}
+
+.roach-super::before {
+  content: '';
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.35) 0%, rgba(34, 211, 238, 0.15) 45%, rgba(147, 51, 234, 0) 75%);
+  filter: blur(1px);
+  animation: super-roach-pulse 1.8s ease-in-out infinite;
+}
+
+.roach-super-image {
+  filter: drop-shadow(0 0 14px rgba(252, 211, 77, 0.75)) drop-shadow(0 12px 18px rgba(15, 23, 42, 0.35));
+  animation: super-roach-twinkle 1.4s ease-in-out infinite;
+}
+
+@keyframes super-roach-pulse {
+  0%,
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes super-roach-twinkle {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06) rotate(-3deg);
+  }
+}
+
 .roach-image-mosaic {
   filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.45)) contrast(1.1) saturate(0.75) blur(1px);
   image-rendering: pixelated;
