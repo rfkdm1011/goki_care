@@ -9,19 +9,11 @@ const MAX_LIVES = 3;
 const DEFAULT_KILL_TARGET = 10;
 
 const DIFFICULTIES = {
-  easy: {
-    label: 'Easy',
-    description: 'ズミー初陣。愛嬌たっぷりのきゃわG。',
-    roachRatio: 0.55,
-    spawnInterval: 1400,
-    speedRange: [4200, 5600],
-    spawnCountRange: [1, 1],
-    killTarget: 10,
-    decoys: ['badge', 'light', 'hero'],
-  },
-  normal: {
-    label: 'Normal',
+  yasashisa: {
+    label: 'やさしさモード',
+    title: 'やさしさモード',
     description: '油断するな。奴らが来る。',
+    flavor: 'ズミーの集中力を鍛えるための標準任務。バランスよく敵影が迫る。',
     roachRatio: 0.65,
     spawnInterval: 1100,
     speedRange: [2500, 4400],
@@ -29,20 +21,12 @@ const DIFFICULTIES = {
     killTarget: 20,
     decoys: ['badge', 'light', 'capsule'],
   },
-  hard: {
-    label: 'Hard',
-    description: 'ちみはこの光沢にひれ伏す事となる。',
-    roachRatio: 0.75,
-    spawnInterval: 800,
-    speedRange: [1500, 2200],
-    spawnCountRange: [3, 4],
-    killTarget: 50,
-    decoys: ['light', 'capsule', 'drone'],
-  },
   inferno: {
     label: '地獄モード',
+    title: '地獄モード',
     description: '地獄から這い出た禍々しいモンスター。動きもスピードも桁違い。',
-    roachRatio: 0.50,
+    flavor: '生き残れる者のみが伝説となる。反射神経を極限まで研ぎ澄ませ。',
+    roachRatio: 0.5,
     spawnInterval: 300,
     speedRange: [300, 1000],
     spawnCountRange: [4, 5],
@@ -163,29 +147,12 @@ function usePrefersReducedMotion() {
 
 function RoachGraphic({ difficulty }) {
   switch (difficulty) {
-    case 'easy':
-      return (
-        <div className="roach-graphic roach-easy">
-          <span className="eye left" />
-          <span className="eye right" />
-          <span className="smile" />
-        </div>
-      );
-    case 'normal':
+    case 'yasashisa':
       return (
         <div className="roach-graphic roach-normal">
           <span className="segment" />
           <span className="segment" />
           <span className="segment" />
-          <span className="antenna left" />
-          <span className="antenna right" />
-        </div>
-      );
-    case 'hard':
-      return (
-        <div className="roach-graphic roach-hard">
-          <span className="segment long" />
-          <span className="segment short" />
           <span className="antenna left" />
           <span className="antenna right" />
         </div>
