@@ -250,15 +250,12 @@ function getRoachOrientationClass(stage, direction) {
 }
 
 function StageRoach({ stage, difficulty, roachType = 'standard', direction }) {
-  const orientationClass = getRoachOrientationClass(stage, direction);
-
   if (roachType === SUPER_ROACH.type) {
     return (
       <div
         className={[
           'roach-graphic',
           'roach-super',
-          orientationClass,
         ]
           .filter(Boolean)
           .join(' ')}
@@ -271,6 +268,8 @@ function StageRoach({ stage, difficulty, roachType = 'standard', direction }) {
       </div>
     );
   }
+
+  const orientationClass = getRoachOrientationClass(stage, direction);
 
   const roachImage = getStageRoachImage(stage, difficulty);
   if (roachImage) {
