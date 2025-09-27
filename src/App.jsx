@@ -597,10 +597,18 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     }, 500);
 
     let defeatedRoach = null;
+    const containerRect = containerRef.current?.getBoundingClientRect() ?? null;
+    const pointerXPx =
+      typeof clientX === 'number'
+        ? clientX
+        : containerRect
+          ? containerRect.left + (xPercent / 100) * containerRect.width
+          : null;
 
     setRoaches((prev) => {
-      let closestRoach = null;
-      let closestDistance = Infinity;
+      let targetedRoach = null;
+      let bestHorizontalFit = Infinity;
+      let bestDepthScore = -Infinity;
 
       prev.forEach((roach) => {
         const element = roachElementsRef.current.get(roach.id);
@@ -610,41 +618,57 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
 
         const rect = element.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const detectionRadius = Math.max(rect.width, rect.height) * 0.55;
-        const pointerX = typeof clientX === 'number' ? clientX : centerX;
-        const pointerY = typeof clientY === 'number' ? clientY : centerY;
-        const distance = Math.hypot(centerX - pointerX, centerY - pointerY);
+        const tolerancePx = Math.max(rect.width * 0.6, 40);
+        const horizontalDistancePx =
+          typeof pointerXPx === 'number' ? Math.abs(centerX - pointerXPx) : Infinity;
+        const isWithinColumn =
+          typeof pointerXPx === 'number'
+            ? horizontalDistancePx <= tolerancePx
+            : Math.abs((roach.x ?? 0) - xPercent) <= 12;
 
-        if (Number.isFinite(distance) && distance <= detectionRadius && distance < closestDistance) {
-          closestRoach = roach;
-          closestDistance = distance;
+        if (!isWithinColumn) {
+          return;
+        }
+
+        const effectiveDistance =
+          typeof pointerXPx === 'number' ? horizontalDistancePx : Math.abs((roach.x ?? 0) - xPercent);
+        const depthScore = rect.bottom;
+
+        if (
+          !targetedRoach ||
+          effectiveDistance < bestHorizontalFit - 0.5 ||
+          (Math.abs(effectiveDistance - bestHorizontalFit) <= 0.5 && depthScore > bestDepthScore)
+        ) {
+          targetedRoach = roach;
+          bestHorizontalFit = effectiveDistance;
+          bestDepthScore = depthScore;
         }
       });
 
-      if (!closestRoach) {
+      if (!targetedRoach) {
         prev.forEach((roach) => {
           const distance = Math.abs((roach.x ?? 0) - xPercent);
-          if (distance <= 12 && distance < closestDistance) {
-            closestRoach = roach;
-            closestDistance = distance;
+          if (distance <= 12 && distance < bestHorizontalFit) {
+            targetedRoach = roach;
+            bestHorizontalFit = distance;
+            bestDepthScore = -Infinity;
           }
         });
       }
 
-      if (!closestRoach) {
+      if (!targetedRoach) {
         return prev;
       }
 
-      const timeoutId = roachTimeoutsRef.current.get(closestRoach.id);
+      const timeoutId = roachTimeoutsRef.current.get(targetedRoach.id);
       if (timeoutId) {
         clearTimeout(timeoutId);
-        roachTimeoutsRef.current.delete(closestRoach.id);
+        roachTimeoutsRef.current.delete(targetedRoach.id);
       }
 
-      defeatedRoach = closestRoach;
+      defeatedRoach = targetedRoach;
 
-      return prev.filter((roach) => roach.id !== closestRoach.id);
+      return prev.filter((roach) => roach.id !== targetedRoach.id);
     });
 
     if (defeatedRoach) {
