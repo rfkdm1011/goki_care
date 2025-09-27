@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import chabaneImage from './assets/chabane.png';
+import chabaneInfernoImage from './assets/chabane2.png';
 import yamatoImage from './assets/yamato.png';
+import yamatoInfernoImage from './assets/yamato2.png';
 import kuroImage from './assets/kuro.png';
+import kuroInfernoImage from './assets/kuro2.png';
 import wamonImage from './assets/wamon.png';
+import wamonInfernoImage from './assets/wamon2.png';
 import logoImage from '../logo.png';
 
 const MAX_LIVES = 3;
@@ -51,6 +55,10 @@ const STAGES = [
     stageType: 'flash',
     instructions: '一瞬だけ現れるターゲットを即座に見極め、Gだけをタップせよ。Gでは無いものに触れたらライフを失う。',
     roachImage: chabaneImage,
+    roachImages: {
+      yasashisa: chabaneImage,
+      inferno: chabaneInfernoImage,
+    },
     roachAlt: 'チャバゴキブリのターゲット',
   },
   {
@@ -69,6 +77,10 @@ const STAGES = [
     instructions:
       '画面をタップしてレーザーを発射。複数で迫るGは撃墜していない限り進行し続ける。こちらの陣地に侵入される前に全て撃ち落とせ。',
     roachImage: yamatoImage,
+    roachImages: {
+      yasashisa: yamatoImage,
+      inferno: yamatoInfernoImage,
+    },
     roachAlt: 'ヤマトゴキブリのターゲット',
   },
   {
@@ -86,6 +98,10 @@ const STAGES = [
     stageType: 'classic',
     instructions: '画面を横切るターゲットからGだけをタップで駆逐。誤射に注意。',
     roachImage: kuroImage,
+    roachImages: {
+      yasashisa: kuroImage,
+      inferno: kuroInfernoImage,
+    },
     roachAlt: 'クロゴキブリのターゲット',
   },
   {
@@ -103,6 +119,10 @@ const STAGES = [
     stageType: 'saber',
     instructions: '接近してくるGが斬撃範囲に入った瞬間にライトセーバーを振り下ろせ。タイミングが命だ。',
     roachImage: wamonImage,
+    roachImages: {
+      yasashisa: wamonImage,
+      inferno: wamonInfernoImage,
+    },
     roachAlt: 'ワモンゴキブリのターゲット',
   },
 ];
@@ -171,13 +191,32 @@ function RoachGraphic({ difficulty }) {
   }
 }
 
+function getStageRoachImage(stage, difficulty) {
+  if (!stage) {
+    return null;
+  }
+
+  if (stage.roachImages) {
+    if (difficulty && stage.roachImages[difficulty]) {
+      return stage.roachImages[difficulty];
+    }
+
+    if (stage.roachImages.default) {
+      return stage.roachImages.default;
+    }
+  }
+
+  return stage.roachImage ?? null;
+}
+
 function StageRoach({ stage, difficulty }) {
-  if (stage?.roachImage) {
+  const roachImage = getStageRoachImage(stage, difficulty);
+  if (roachImage) {
     return (
       <div className="roach-graphic">
         <img
-          src={stage.roachImage}
-          alt={stage.roachAlt ?? `${stage.species}のターゲット`}
+          src={roachImage}
+          alt={stage?.roachAlt ?? `${stage?.species ?? 'G'}のターゲット`}
           className="roach-image"
         />
       </div>
@@ -775,16 +814,25 @@ function StagePlayArea({
   }
 }
 
-function StageIntro({ stage, killTarget, onStart }) {
+function StageIntro({ stage, killTarget, onStart, difficulty }) {
+  const roachImage = getStageRoachImage(stage, difficulty);
+  const showMosaic = difficulty === 'inferno';
+  const roachAlt = stage.roachAlt ?? `${stage.species}のターゲット`;
+
   return (
     <section className="rounded-3xl bg-white/5 px-5 py-6 text-white shadow-lg shadow-black/30 backdrop-blur">
       <p className="text-sm font-semibold text-emerald-200">ステージ{stage.order}</p>
       <h2 className="mt-1 flex items-center gap-3 text-2xl font-black text-white">
-        {stage.roachImage ? (
+        {roachImage ? (
           <img
-            src={stage.roachImage}
-            alt={stage.roachAlt ?? `${stage.species}のターゲット`}
-            className="h-12 w-12 rounded-full bg-white/10 object-contain p-1"
+            src={roachImage}
+            alt={roachAlt}
+            className={[
+              'h-12 w-12 rounded-full bg-white/10 object-contain p-1',
+              showMosaic ? 'roach-image-mosaic' : null,
+            ]
+              .filter(Boolean)
+              .join(' ')}
           />
         ) : null}
         <span>{stage.species}</span>
@@ -1135,7 +1183,14 @@ export default function App() {
           </section>
         )}
 
-        {phase === 'intro' && <StageIntro stage={stage} killTarget={killTarget} onStart={handleStartStage} />}
+        {phase === 'intro' && (
+          <StageIntro
+            stage={stage}
+            killTarget={killTarget}
+            onStart={handleStartStage}
+            difficulty={difficulty}
+          />
+        )}
 
         {phase === 'play' && (
           <section className="flex flex-col gap-4">
