@@ -1074,7 +1074,7 @@ export default function App() {
           <img
             src={logoImage}
             alt="GokiCare ロゴ"
-            className="mx-auto h-32 w-auto shadow-lg shadow-emerald-900/40"
+            className="mx-auto h-50 w-auto shadow-lg shadow-emerald-900/40"
           />
           <p className="text-xs text-emerald-100/80">
             この世に蔓延るGを一匹残らず駆逐するため、ジェダイの騎士ズミーが立ち上がる。フォースの力で銀河を守れ！
