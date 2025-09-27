@@ -1619,7 +1619,7 @@ export default function App() {
         {phase === 'complete' && difficulty && <FinalReport difficulty={difficulty} onRestart={handleBackToMenu} />}
 
         <footer className="pb-6 pt-2 text-center text-[11px] text-emerald-100/50">
-          © {new Date().getFullYear()} GOKI WARS / Legend of Zumingo
+          © 2025 ZUMI WARS / G Strikes Back
         </footer>
       </div>
     </div>
