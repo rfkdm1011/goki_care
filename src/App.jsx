@@ -20,9 +20,8 @@ const DEFAULT_KILL_TARGET = 10;
 const DIFFICULTIES = {
   yasashisa: {
     label: 'やさしさモード',
-    title: 'やさしさモード',
-    description: '油断するな。奴らが来る。',
-    flavor: 'ズミーの集中力を鍛えるための標準任務。バランスよく敵影が迫る。',
+    description: '奴らが来る。',
+    flavor: 'きゃわわなGを駆逐せよ。フォースと共に。',
     roachRatio: 0.65,
     spawnInterval: 1100,
     speedRange: [2500, 4400],
@@ -32,9 +31,8 @@ const DIFFICULTIES = {
   },
   inferno: {
     label: '地獄モード',
-    title: '地獄モード',
-    description: 'やさしさモードよりも一枚上手な強敵。油断は禁物だが冷静に対処すべし。',
-    hint: '光り輝くものが、我々を導いてくれるかも知れない…',
+    description: '可愛さ皆無。初速MAXの地上最強繁殖モンスター。',
+    hint: '光り輝きし"モノ"が我々を導いてくれるかも知れない…',
     flavor: 'わずかな隙を突いてくる強敵に備え、集中を切らさず挑め。',
     roachRatio: 0.6,
     spawnInterval: 900,
@@ -47,9 +45,9 @@ const DIFFICULTIES = {
 
 const SUPER_ROACH = {
   type: 'super',
-  label: 'すーぱーキラキラうんこちゃん',
+  label: 'す〜ぱ〜キラキラ☆うんこちゃん',
   killCount: 100,
-  spawnChance: 0.15,
+  spawnChance: 0.12,
 };
 
 const STAGES = [
