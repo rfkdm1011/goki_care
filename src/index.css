@@ -450,7 +450,8 @@ button {
   animation-name: descendRoach;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: crosshair;
 }
 
 .shooter-roach.reduce-motion {

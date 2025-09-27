@@ -517,6 +517,8 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
   const spawnIntervalRef = useRef(null);
   const containerRef = useRef(null);
   const roachElementsRef = useRef(new Map());
+  const ignoreNextClickRef = useRef(false);
+  const lastPointerDownTimeRef = useRef(0);
 
   const registerRoachElement = (roachId) => (node) => {
     if (node) {
@@ -588,9 +590,42 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     };
   }, [difficultyConfig, onMistake, difficulty, stage]);
 
-  const fireLaser = ({ xPercent, clientX, clientY }) => {
+  const resolvePointerPosition = (event, fallbackRect = null) => {
+    const nativeEvent = event?.nativeEvent ?? event;
+    let pointerX = event?.clientX;
+    let pointerY = event?.clientY;
+
+    if ((typeof pointerX !== 'number' || Number.isNaN(pointerX)) && nativeEvent) {
+      const touch = nativeEvent.changedTouches?.[0] ?? nativeEvent.touches?.[0];
+      if (touch) {
+        pointerX = touch.clientX;
+      }
+    }
+
+    if ((typeof pointerY !== 'number' || Number.isNaN(pointerY)) && nativeEvent) {
+      const touch = nativeEvent.changedTouches?.[0] ?? nativeEvent.touches?.[0];
+      if (touch) {
+        pointerY = touch.clientY;
+      }
+    }
+
+    if (fallbackRect) {
+      if (typeof pointerX !== 'number' || Number.isNaN(pointerX)) {
+        pointerX = fallbackRect.left + fallbackRect.width / 2;
+      }
+
+      if (typeof pointerY !== 'number' || Number.isNaN(pointerY)) {
+        pointerY = fallbackRect.top + fallbackRect.height / 2;
+      }
+    }
+
+    return { pointerX, pointerY };
+  };
+
+  const fireLaser = ({ xPercent, clientX, clientY, forcedTargetId = null }) => {
+    const clampedXPercent = Math.min(Math.max(typeof xPercent === 'number' ? xPercent : 0, 0), 100);
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const laser = { id, x: xPercent };
+    const laser = { id, x: clampedXPercent };
     setLasers((prev) => [...prev, laser]);
     setTimeout(() => {
       setLasers((prev) => prev.filter((item) => item.id !== id));
@@ -602,7 +637,7 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       typeof clientX === 'number'
         ? clientX
         : containerRect
-          ? containerRect.left + (xPercent / 100) * containerRect.width
+          ? containerRect.left + (clampedXPercent / 100) * containerRect.width
           : null;
 
     setRoaches((prev) => {
@@ -610,50 +645,58 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
       let bestHorizontalFit = Infinity;
       let bestDepthScore = -Infinity;
 
-      prev.forEach((roach) => {
-        const element = roachElementsRef.current.get(roach.id);
-        if (!element) {
-          return;
-        }
-
-        const rect = element.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const tolerancePx = Math.max(rect.width * 0.6, 40);
-        const horizontalDistancePx =
-          typeof pointerXPx === 'number' ? Math.abs(centerX - pointerXPx) : Infinity;
-        const isWithinColumn =
-          typeof pointerXPx === 'number'
-            ? horizontalDistancePx <= tolerancePx
-            : Math.abs((roach.x ?? 0) - xPercent) <= 12;
-
-        if (!isWithinColumn) {
-          return;
-        }
-
-        const effectiveDistance =
-          typeof pointerXPx === 'number' ? horizontalDistancePx : Math.abs((roach.x ?? 0) - xPercent);
-        const depthScore = rect.bottom;
-
-        if (
-          !targetedRoach ||
-          effectiveDistance < bestHorizontalFit - 0.5 ||
-          (Math.abs(effectiveDistance - bestHorizontalFit) <= 0.5 && depthScore > bestDepthScore)
-        ) {
-          targetedRoach = roach;
-          bestHorizontalFit = effectiveDistance;
-          bestDepthScore = depthScore;
-        }
-      });
+      if (forcedTargetId) {
+        targetedRoach = prev.find((roach) => roach.id === forcedTargetId) ?? null;
+      }
 
       if (!targetedRoach) {
         prev.forEach((roach) => {
-          const distance = Math.abs((roach.x ?? 0) - xPercent);
-          if (distance <= 12 && distance < bestHorizontalFit) {
+          const element = roachElementsRef.current.get(roach.id);
+          if (!element) {
+            return;
+          }
+
+          const rect = element.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const tolerancePx = Math.max(rect.width * 0.6, 40);
+          const horizontalDistancePx =
+            typeof pointerXPx === 'number' ? Math.abs(centerX - pointerXPx) : Infinity;
+          const isWithinColumn =
+            typeof pointerXPx === 'number'
+              ? horizontalDistancePx <= tolerancePx
+              : Math.abs((roach.x ?? 0) - clampedXPercent) <= 12;
+
+          if (!isWithinColumn) {
+            return;
+          }
+
+          const effectiveDistance =
+            typeof pointerXPx === 'number'
+              ? horizontalDistancePx
+              : Math.abs((roach.x ?? 0) - clampedXPercent);
+          const depthScore = rect.bottom;
+
+          if (
+            !targetedRoach ||
+            effectiveDistance < bestHorizontalFit - 0.5 ||
+            (Math.abs(effectiveDistance - bestHorizontalFit) <= 0.5 && depthScore > bestDepthScore)
+          ) {
             targetedRoach = roach;
-            bestHorizontalFit = distance;
-            bestDepthScore = -Infinity;
+            bestHorizontalFit = effectiveDistance;
+            bestDepthScore = depthScore;
           }
         });
+
+        if (!targetedRoach) {
+          prev.forEach((roach) => {
+            const distance = Math.abs((roach.x ?? 0) - clampedXPercent);
+            if (distance <= 12 && distance < bestHorizontalFit) {
+              targetedRoach = roach;
+              bestHorizontalFit = distance;
+              bestDepthScore = -Infinity;
+            }
+          });
+        }
       }
 
       if (!targetedRoach) {
@@ -678,26 +721,28 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     }
   };
 
-  const handleAreaTap = (event) => {
+  const handleStageFire = (event) => {
     if (!difficultyConfig) {
       return;
     }
+
+    if (event.type === 'pointerdown') {
+      lastPointerDownTimeRef.current = Date.now();
+      ignoreNextClickRef.current = true;
+    } else if (event.type === 'click' && ignoreNextClickRef.current) {
+      const elapsed = Date.now() - lastPointerDownTimeRef.current;
+      ignoreNextClickRef.current = false;
+      if (elapsed < 600) {
+        return;
+      }
+    }
+
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) {
       return;
     }
 
-    const nativeEvent = event.nativeEvent;
-    let pointerX = event.clientX;
-    let pointerY = event.clientY;
-
-    if ((typeof pointerX !== 'number' || typeof pointerY !== 'number') && nativeEvent) {
-      const touch = nativeEvent.changedTouches?.[0] ?? nativeEvent.touches?.[0];
-      if (touch) {
-        pointerX = touch.clientX;
-        pointerY = touch.clientY;
-      }
-    }
+    const { pointerX, pointerY } = resolvePointerPosition(event, rect);
 
     if (typeof pointerX !== 'number' || typeof pointerY !== 'number') {
       return;
@@ -709,6 +754,48 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
     fireLaser({ xPercent: clampedXPercent, clientX: pointerX, clientY: pointerY });
   };
 
+  const handleStageKeyDown = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+
+    const pointerX = rect.left + rect.width / 2;
+    const pointerY = rect.top + rect.height;
+    fireLaser({ xPercent: 50, clientX: pointerX, clientY: pointerY });
+  };
+
+  const handleRoachInput = (event, roach) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.type === 'pointerdown') {
+      lastPointerDownTimeRef.current = Date.now();
+      ignoreNextClickRef.current = true;
+    } else if (event.type === 'click' && ignoreNextClickRef.current) {
+      const elapsed = Date.now() - lastPointerDownTimeRef.current;
+      ignoreNextClickRef.current = false;
+      if (elapsed < 600) {
+        return;
+      }
+    }
+
+    const elementRect = event.currentTarget?.getBoundingClientRect?.() ?? null;
+    const { pointerX, pointerY } = resolvePointerPosition(event, elementRect ?? undefined);
+
+    fireLaser({
+      xPercent: roach.x,
+      clientX: pointerX,
+      clientY: pointerY,
+      forcedTargetId: roach.id,
+    });
+  };
+
   if (!difficultyConfig) {
     return null;
   }
@@ -716,8 +803,12 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
   return (
     <div
       className="stage-shooter"
-      onClick={handleAreaTap}
-      role="presentation"
+      onPointerDown={handleStageFire}
+      onClick={handleStageFire}
+      onKeyDown={handleStageKeyDown}
+      role="button"
+      aria-label="レーザー発射エリア"
+      tabIndex={0}
       ref={containerRef}
     >
       <div className="shooter-sky" />
@@ -745,6 +836,8 @@ function ShooterStage({ stage, difficulty, difficultyConfig, onSuccess, onMistak
             className={className}
             style={style}
             ref={registerRoachElement(roach.id)}
+            onPointerDown={(event) => handleRoachInput(event, roach)}
+            onClick={(event) => handleRoachInput(event, roach)}
           >
             <StageRoach stage={stage} difficulty={difficulty} roachType={roach.roachType} />
           </div>
