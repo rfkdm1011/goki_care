@@ -1124,9 +1124,6 @@ function FinalReport({ difficulty, onRestart }) {
       <p className="mt-4 text-sm leading-relaxed text-emerald-100/90">
         地獄のG軍を駆逐した！銀河と県立大学に平和が戻った。
       </p>
-      <p className="mt-4 text-xs text-emerald-100/80">
-        さらなる強さを求めるなら別の難易度に挑戦し、新たな敵シルエットに慣れていこう。
-      </p>
       <button
         type="button"
         onClick={onRestart}
