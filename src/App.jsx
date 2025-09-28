@@ -904,7 +904,7 @@ function ClassicStage({ stage, difficulty, difficultyConfig, roachRatio, onSucce
           scale = Math.max(scale, 1.35);
         }
         if (!isRoach && variant === 'mosa') {
-          scale = Math.max(scale, 20.65);
+          scale = Math.max(scale, 10.65);
         }
         const newObject = {
           id,
