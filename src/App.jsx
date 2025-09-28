@@ -434,7 +434,7 @@ function FlashStage({ stage, difficulty, difficultyConfig, roachRatio, onSuccess
         scale = Math.max(scale, 1.35);
       }
       if (!isRoach && variant === 'mosa') {
-        scale = Math.max(scale, 5.65);
+        scale = Math.max(scale, 20.65);
       }
       const newObject = {
         id,
