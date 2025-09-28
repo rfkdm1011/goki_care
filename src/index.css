@@ -151,7 +151,7 @@ button {
 .roach-image-mosaic {
   filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.45)) contrast(1.1) saturate(0.75) blur(1px);
   image-rendering: pixelated;
-  transform: scale(5.05);
+  transform: scale(1.05);
 }
 
 .roach-graphic .antenna {
@@ -300,7 +300,7 @@ button {
 }
 
 .decoy-image-mosa {
-  width: 96px;
+  width: 150px;
   filter: drop-shadow(0 6px 18px rgba(15, 23, 42, 0.45));
 }
 
